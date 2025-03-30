@@ -1,0 +1,479 @@
+
+- NASM Map file ---------------------------------------------------------------
+
+Source file:  lites.asm
+Output file:  lites.wsc
+
+-- Program origin -------------------------------------------------------------
+
+00000000
+
+-- Sections (summary) ---------------------------------------------------------
+
+Vstart            Start             Stop              Length    Class     Name
+               0                 0                 0  00000000  progbits  .text
+               0                 0             10000  00010000  progbits  .code
+           10000             10000             104B4  000004B4  nobits    .bss
+
+-- Sections (detailed) --------------------------------------------------------
+
+---- Section .text ------------------------------------------------------------
+
+class:     progbits
+length:                   0
+start:                    0
+align:     not defined
+follows:   not defined
+vstart:                   0
+valign:    not defined
+vfollows:  not defined
+
+---- Section .code ------------------------------------------------------------
+
+class:     progbits
+length:               10000
+start:                    0
+align:                  100
+follows:   not defined
+vstart:                   0
+valign:    not defined
+vfollows:  not defined
+
+---- Section .bss -------------------------------------------------------------
+
+class:     nobits
+length:                 4B4
+start:                10000
+align:                   40
+follows:   not defined
+vstart:               10000
+valign:                  40
+vfollows:  not defined
+
+-- Symbols --------------------------------------------------------------------
+
+---- No Section ---------------------------------------------------------------
+
+Value     Name
+00000002  RH_ROM_4MBITS
+00000003  RH_ROM_8MBITS
+00000004  RH_ROM_16MBITS
+00000006  RH_ROM_32MBITS
+00000008  RH_ROM_64MBITS
+00000009  RH_ROM_128MBITS
+00000000  RH_NO_SRAM
+00000001  RH_SRAM_64KBITS
+00000002  RH_SRAM_256KBITS
+00000003  RH_SRAM_1MBITS
+00000004  RH_SRAM_2MBITS
+00000010  RH_SRAM_1KBITS
+00000020  RH_SRAM_16KBITS
+00000050  RH_SRAM_8KBITS
+00000000  RH_WS_MONO
+00000001  RH_WS_COLOR
+00000000  RH_NO_RTC
+00000001  RH_RTC
+00000004  RH_HORIZONTAL
+00000005  RH_VERTICAL
+00000000  WS_RAM_BASE
+00002000  WS_TILE_BANK
+00001FFE  WS_STACK
+00004000  WSC_TILE_BANK1
+00008000  WSC_TILE_BANK2
+0000C000  WSC_RAM_BASE2
+0000FE00  WSC_PALETTES
+0000FDFE  WSC_STACK
+00000800  MAP_SIZE
+00000200  SPR_TABLE_SIZE
+00000007  INTVEC_HBLANK_TIMER
+00000006  INTVEC_VBLANK_START
+00000005  INTVEC_VBLANK_TIMER
+00000004  INTVEC_DRAWING_LINE
+00000003  INTVEC_SERIAL_RECEIVE
+00000002  INTVEC_RTC_ALARM
+00000001  INTVEC_KEY_PRESS
+00000000  INTVEC_SERIAL_SEND
+000000E0  SCREEN_WIDTH
+00000090  SCREEN_HEIGHT
+0000001C  SCREEN_TWIDTH
+00000012  SCREEN_THEIGHT
+00000100  MAP_WIDTH
+00000100  MAP_HEIGHT
+00000020  MAP_TWIDTH
+00000020  MAP_THEIGHT
+00000000  IO_DISPLAY_CTRL
+00000001  BG_ON
+00000000  BG_OFF
+00000002  FG_ON
+00000000  FG_OFF
+00000004  SPR_ON
+00000000  SPR_OFF
+00000008  SPR_WIN_ON
+00000000  SPR_WIN_OFF
+00000000  FG_IN_OUT_WIN
+00000010  FG_IN_WIN
+00000030  FG_OUT_WIN
+00000001  IO_BG_PAL
+00000002  IO_CUR_LINE
+00000003  IO_LINE_COMP
+00000004  IO_SPR_TABLE
+00000005  IO_SPR_START
+00000006  IO_SPR_STOP
+00000007  IO_FGBG_MAP
+00000008  IO_FG_WIN_X0
+00000009  IO_FG_WIN_Y0
+0000000A  IO_FG_WIN_X1
+0000000B  IO_FG_WIN_Y1
+0000000C  IO_SPR_WIN_X0
+0000000D  IO_SPR_WIN_Y0
+0000000E  IO_SPR_WIN_X1
+0000000F  IO_SPR_WIN_Y1
+00000010  IO_BG_X
+00000011  IO_BG_Y
+00000012  IO_FG_X
+00000013  IO_FG_Y
+00000014  IO_LCD_CTRL
+00000001  LCD_ON
+00000000  LCD_OFF
+00000015  IO_LCD_ICONS
+00000001  LCD_ICON_SLEEP
+00000002  LCD_ICON_VERTI
+00000004  LCD_ICON_HORIZ
+00000008  LCD_ICON_DOT1
+00000010  LCD_ICON_DOT2
+00000020  LCD_ICON_DOT3
+0000001C  IO_PALSHADE_10
+0000001D  IO_PALSHADE_32
+0000001E  IO_PALSHADE_54
+0000001F  IO_PALSHADE_76
+00000020  IO_WS_PAL_00
+00000021  IO_WS_PAL_01
+00000022  IO_WS_PAL_10
+00000023  IO_WS_PAL_11
+00000024  IO_WS_PAL_20
+00000025  IO_WS_PAL_21
+00000026  IO_WS_PAL_30
+00000027  IO_WS_PAL_31
+00000028  IO_WS_PAL_40
+00000029  IO_WS_PAL_41
+0000002A  IO_WS_PAL_50
+0000002B  IO_WS_PAL_51
+0000002C  IO_WS_PAL_60
+0000002D  IO_WS_PAL_61
+0000002E  IO_WS_PAL_70
+0000002F  IO_WS_PAL_71
+00000030  IO_WS_PAL_80
+00000031  IO_WS_PAL_81
+00000032  IO_WS_PAL_90
+00000033  IO_WS_PAL_91
+00000034  IO_WS_PAL_A0
+00000035  IO_WS_PAL_A1
+00000036  IO_WS_PAL_B0
+00000037  IO_WS_PAL_B1
+00000038  IO_WS_PAL_C0
+00000039  IO_WS_PAL_C1
+0000003A  IO_WS_PAL_D0
+0000003B  IO_WS_PAL_D1
+0000003C  IO_WS_PAL_E0
+0000003D  IO_WS_PAL_E1
+0000003E  IO_WS_PAL_F0
+0000003F  IO_WS_PAL_F1
+00000040  IOw_DMA_SRC
+00000042  IO_DMA_SRC_BANK
+00000043  IO_DMA_DST_BANK
+00000044  IOw_DMA_DST
+00000046  IOw_DMA_SIZE
+00000048  IO_DMA_CTRL
+00000080  DMA_START
+00000080  DMA_CHECK
+0000004A  IOw_SNDDMA_SRC
+0000004C  IO_SNDDMA_BANK
+0000004E  IOw_SNDDMA_SIZE
+00000052  IO_SNDDMA_CTRL
+00000060  IO_VIDEO_MODE
+000000E0  VMODE_16C_CHK
+000000C0  VMODE_16C_PLN
+00000040  VMODE_4C
+00000000  VMODE_4C_MONO
+0000000C  VMODE_CLEANINIT
+00000080  IOw_AUDIO1_FREQ
+00000082  IOw_AUDIO2_FREQ
+00000084  IOw_AUDIO3_FREQ
+00000086  IOw_AUDIO4_FREQ
+00000088  IO_AUDIO1_VOL
+00000089  IO_AUDIO2_VOL
+0000008A  IO_AUDIO3_VOL
+0000008B  IO_AUDIO4_VOL
+0000008C  IO_AUDIO_SWEEP_VAL
+0000008D  IO_AUDIO_SWEEP_STEP
+0000008E  IO_AUDIO_NOISE_CTRL
+00000008  NOISE_RESET
+00000010  NOISE_ENABLE
+0000008F  IO_AUDIO_SAMPLE
+00000090  IO_AUDIO_CTRL
+00000001  AUDIO_1_ON
+00000000  AUDIO_1_OFF
+00000002  AUDIO_2_ON
+00000000  AUDIO_2_OFF
+00000004  AUDIO_3_ON
+00000000  AUDIO_3_OFF
+00000008  AUDIO_4_ON
+00000000  AUDIO_4_OFF
+00000020  AUDIO_2_VOICE
+00000040  AUDIO_3_SWEEP
+00000080  AUDIO_4_NOISE
+00000091  IO_AUDIO_OUTPUT
+00000001  AUDIO_OUT_MONO
+00000008  AUDIO_OUT_STEREO
+00000092  IOw_AUDIO_NOISE_CNT
+00000094  IO_AUDIO_VOLUME
+000000A0  IO_HARDWARE_TYPE
+00000002  WS_COLOR
+00000000  WS_MONO
+000000A2  IO_TIMER_CTRL
+00000001  HBLANK_TIMER_ON
+00000000  HBLANK_TIMER_OFF
+00000000  HBLANK_TIMER_MODE_ONESHOT
+00000002  HBLANK_TIMER_MODE_AUTOPRESET
+00000004  VBLANK_TIMER_ON
+00000000  VBLANK_TIMER_OFF
+00000000  VBLANK_TIMER_MODE_ONESHOT
+00000008  VBLANK_TIMER_MODE_AUTOPRESET
+000000A4  IOw_HBLANK_FREQ
+000000A6  IOw_VBLANK_FREQ
+000000A8  IO_HBLANK_CNT1
+000000A9  IO_HBLANK_CNT2
+000000AA  IO_VBLANK_CNT1
+000000AB  IO_VBLANK_CNT2
+000000B0  IO_INT_BASE
+00000020  INT_BASE
+000000B1  IO_COMM_DATA
+000000B2  IO_INT_ENABLE
+00000080  INT_HBLANK_TIMER
+00000040  INT_VBLANK_START
+00000020  INT_VBLANK_TIMER
+00000010  INT_DRAWING_LINE
+00000008  INT_SERIAL_RECEIVE
+00000004  INT_RTC_ALARM
+00000002  INT_KEY_PRESS
+00000001  INT_SERIAL_SEND
+000000B3  IO_COMM_DIR
+00000080  COMM_RECEIVE_INT_GEN
+00000000  COMM_SPEED_9600
+00000040  COMM_SPEED_38400
+00000020  COMM_SEND_INT_GEN
+00000004  COMM_SEND_COMPLETE
+00000002  COMM_ERROR
+00000001  COMM_RECEIVE_COMPLETE
+000000B5  IO_KEYPAD
+00000010  KEYPAD_READ_ARROWS_V
+00000020  KEYPAD_READ_ARROWS_H
+00000040  KEYPAD_READ_BUTTONS
+00000001  PAD_UP
+00000002  PAD_RIGHT
+00000004  PAD_DOWN
+00000008  PAD_LEFT
+00000002  PAD_START
+00000004  PAD_A
+00000008  PAD_B
+000000B6  IO_INT_ACK
+000000BA  IOw_INTERNAL_EEPROM_DATA
+000000BC  IOw_INTERNAL_EEPROM_ADDRESS
+000000BE  IOw_INTERNAL_EEPROM_CTRL
+00000080  IEEPROM_INIT
+00000040  IEEPROM_PROTECT
+00000020  IEEPROM_WRITE
+00000010  IEEPROM_READ
+00000002  IEEPROM_WRITE_COMPLETE
+00000001  IEEPROM_READ_COMPLETE
+000000C0  IO_ROM_BASE_BANK
+000000C1  IO_SRAM_BANK
+000000C2  IO_ROM_BANK_SEGMENT2
+000000C3  IO_ROM_BANK_SEGMENT3
+000000CA  IO_RTC_COMMAND
+00000010  RTC_COMMAND_RESET
+00000012  RTC_COMMAND_ALARM
+00000014  RTC_COMMAND_SET_TIME
+00000015  RTC_COMMAND_GET_TIME
+00000080  RTC_COMMAND_ACK
+000000CB  IO_RTC_DATA
+00003800  MAP_FG
+00003000  MAP_BG
+00002E00  SPRITE_TABLE
+00000020  PALETTE_SIZE
+00000040  NUMBER_TILES
+00000020  GFX_TILE_SIZE
+00000003  LITEW
+00000003  LITEH
+00000000  STATE_GAME
+00000001  STATE_WON
+00000002  STATE_TITLE
+00000001  BLINK_OPEN
+00000002  BLINK_CLOSED
+00000000  music_env
+00000000  music_env.start
+00000002  music_env.ptr
+00000004  music_env.end
+00000006  music_env.pad
+00000008  music_env_size
+00000000  MUSIC_DATA_WAIT
+00000004  MUSIC_DATA_NOTEON
+00000008  MUSIC_DATA_NOTEOFF
+0000000C  MUSIC_DATA_RESTART
+00000010  MUSIC_DATA_VOLUME
+00000014  MUSIC_DATA_INSTRUMENT
+00000018  MUSIC_DATA_ENVELOPE
+0000001C  MUSIC_DATA_NOISE
+
+
+---- Section .code ------------------------------------------------------------
+
+Real              Virtual           Name
+               0                 0  initialize
+             124               124  main_loop
+             148               148  main_loop_game
+             16D               16D  joy_up
+             177               177  joy_down
+             181               181  joy_left
+             18B               18B  joy_right
+             195               195  joy_dir_done
+             199               199  joy_xtest1
+             19F               19F  joy_xtest2
+             1A5               1A5  joy_xtest_done
+             1AD               1AD  joy_ytest1
+             1B3               1B3  joy_ytest2
+             1B9               1B9  joy_ytest_done
+             1D9               1D9  joy_a
+             202               202  joy_done
+             205               205  main_loop_won
+             238               238  main_loop_title
+             269               269  title_continue
+             27E               27E  title_scroll_1
+             29E               29E  title_scroll_2
+             2C4               2C4  title_scroll_3
+             2E5               2E5  title_scroll_4
+             2FD               2FD  vblank_interrupt
+             310               310  init_game
+             34F               34F  init_game_lites_loop
+             36A               36A  init_game_check_solvability
+             390               390  init_game_done
+             391               391  draw_game_bg
+             3A1               3A1  draw_title
+             3BC               3BC  draw_lites
+             3BF               3BF  draw_lites_y
+             3C2               3C2  draw_lites_x
+             44D               44D  flip_lites
+             471               471  flip_lite_left
+             486               486  flip_lite_right
+             49B               49B  flip_lite_top
+             4B2               4B2  flip_lite_bottom
+             4C9               4C9  flip_lite_done
+             4CA               4CA  draw_movecount
+             506               506  draw_timer
+             542               542  update_cursor
+             562               562  update_cursor_loop
+             573               573  init_avatar
+             58A               58A  init_avatar_lites_loop
+             5E3               5E3  update_avatar_lites
+             5EC               5EC  update_avatar_lites_loop
+             5FB               5FB  update_avatar_blink
+             621               621  update_avatar_blink_open_check
+             636               636  update_avatar_blink_update_sprite
+             655               655  update_avatar_blink_done
+             656               656  check_win
+             65F               65F  check_win_loop
+             686               686  check_win_not_won
+             687               687  update_timer
+             6B3               6B3  update_timer_minute_not_elapsed
+             6B8               6B8  update_timer_done
+             6B9               6B9  check_solvability
+             6B9               6B9  check_solvability_qp1
+             6C5               6C5  check_solvability_qp1_loop
+             6D5               6D5  check_solvability_qp2
+             6DE               6DE  check_solvability_qp2_loop
+             6EC               6EC  check_solvability_done
+             6ED               6ED  rnd
+             70D               70D  rnd32
+             762               762  main_loop_jump_table
+             768               768  rnd_lites_divisor
+             76A               76A  cursor_offsets
+             772               772  avatar_lite_offsets
+             7A4               7A4  qp1_offsets
+             7BC               7BC  qp2_offsets
+             7D4               7D4  winsong
+             B8C               B8C  music_test
+             D99               D99  song2
+            1153              1153  tile_palette
+            1173              1173  sprite_palette
+            1193              1193  tiles
+            3193              3193  title_palette
+            31B3              31B3  title_tiles
+            51B3              51B3  litemap
+            5633              5633  titlemap_bg
+            5E33              5E33  titlemap_fg
+            62B3              62B3  winmap
+            6733              6733  music_init
+            679D              679D  music_update
+            67C1              67C1  music_update_loop
+            67D4              67D4  music_event_wait
+            67F2              67F2  music_event_note_on
+            6811              6811  music_event_note_on_envelope
+            6826              6826  music_event_note_off
+            6836              6836  music_event_restart
+            6845              6845  music_event_volume
+            685A              685A  music_event_instrument
+            6881              6881  music_event_envelope
+            68BB              68BB  music_event_noise
+            68DD              68DD  music_event_default
+            68E0              68E0  music_update_done
+            68F6              68F6  music_update_envelopes
+            692F              692F  music_update_envelopes_next
+            6937              6937  debug_waveforms
+            6940              6940  debug_waveform_1
+            6964              6964  music_event_jump_table
+            6A00              6A00  music_envelope_lookup
+
+---- Section .bss -------------------------------------------------------------
+
+Real              Virtual           Name
+           10000             10000  interrupts
+           10400             10400  vblankdone
+           10401             10401  tic
+           10402             10402  lites
+           1041B             1041B  movecount
+           1041D             1041D  px
+           1041E             1041E  py
+           1041F             1041F  last_dpad
+           10421             10421  last_buttons
+           10423             10423  flip_x
+           10424             10424  flip_y
+           10425             10425  flip_w
+           10426             10426  flip_h
+           10427             10427  timertics
+           10428             10428  timer
+           1042A             1042A  state
+           1042C             1042C  blink_state
+           1042E             1042E  blink_timer
+           10430             10430  rnd_val
+           10430             10430  rnd_val_low
+           10432             10432  rnd_val_high
+           10440             10440  pcm_waveforms
+           10440             10440  pcm_waveform_1
+           10450             10450  pcm_waveform_2
+           10460             10460  pcm_waveform_3
+           10470             10470  pcm_waveform_4
+           10480             10480  music_data
+           10482             10482  music_ptr
+           10484             10484  music_instructions
+           10486             10486  music_instruments
+           10488             10488  music_noise
+           1048A             1048A  music_tic
+           1048C             1048C  music_waiting
+           1048E             1048E  music_wait_tic
+           10490             10490  music_vols
+           10490             10490  music_vol_0
+           10491             10491  music_vol_1
+           10492             10492  music_vol_2
+           10493             10493  music_vol_3
+           10494             10494  music_envelopes
+

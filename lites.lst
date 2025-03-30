@@ -1,0 +1,2967 @@
+     1                                  [map all lites.map]
+     2                                  
+     3                                  %include "WonderSwan.inc"
+     1                              <1> ;--------------------------------------------
+     2                              <1> ;     Wonderswan Registers & Equates v0.2
+     3                              <1> ;              by Orion_ [2008]
+     4                              <1> ;
+     5                              <1> ; http://onorisoft.free.fr/
+     6                              <1> ;
+     7                              <1> ; with help of WStech24.txt by Judge and Dox
+     8                              <1> ;--------------------------------------------
+     9                              <1> 
+    10                              <1> ; IO_	mean byte access
+    11                              <1> ; IOw_	mean word access
+    12                              <1> 
+    13                              <1> 
+    14                              <1> ;-------------
+    15                              <1> ; Rom Header
+    16                              <1> 
+    17                              <1> RH_ROM_4MBITS		equ	0x02
+    18                              <1> RH_ROM_8MBITS		equ	0x03
+    19                              <1> RH_ROM_16MBITS		equ	0x04
+    20                              <1> RH_ROM_32MBITS		equ	0x06
+    21                              <1> RH_ROM_64MBITS		equ	0x08
+    22                              <1> RH_ROM_128MBITS		equ	0x09
+    23                              <1> 
+    24                              <1> RH_NO_SRAM		equ	0x00
+    25                              <1> RH_SRAM_64KBITS		equ	0x01
+    26                              <1> RH_SRAM_256KBITS	equ	0x02
+    27                              <1> RH_SRAM_1MBITS		equ	0x03
+    28                              <1> RH_SRAM_2MBITS		equ	0x04
+    29                              <1> RH_SRAM_1KBITS		equ	0x10
+    30                              <1> RH_SRAM_16KBITS		equ	0x20
+    31                              <1> RH_SRAM_8KBITS		equ	0x50
+    32                              <1> 
+    33                              <1> RH_WS_MONO		equ	0x00
+    34                              <1> RH_WS_COLOR		equ	0x01
+    35                              <1> 
+    36                              <1> RH_NO_RTC		equ	0x00
+    37                              <1> RH_RTC			equ	0x01
+    38                              <1> 
+    39                              <1> RH_HORIZONTAL		equ	(0x04 + 0x00)
+    40                              <1> RH_VERTICAL		equ	(0x04 + 0x01)
+    41                              <1> 
+    42                              <1> 
+    43                              <1> 
+    44                              <1> ;-----------------
+    45                              <1> ; Memory Address
+    46                              <1> 
+    47                              <1> WS_RAM_BASE	equ	0x0000
+    48                              <1> WS_TILE_BANK	equ	0x2000
+    49                              <1> WS_STACK	equ	WS_TILE_BANK-2
+    50                              <1> 
+    51                              <1> WSC_TILE_BANK1	equ	0x4000
+    52                              <1> WSC_TILE_BANK2	equ	0x8000
+    53                              <1> WSC_RAM_BASE2	equ	0xC000
+    54                              <1> WSC_PALETTES	equ	0xFE00
+    55                              <1> WSC_STACK	equ	WSC_PALETTES-2
+    56                              <1> 
+    57                              <1> MAP_SIZE	equ	0x800
+    58                              <1> SPR_TABLE_SIZE	equ	0x200
+    59                              <1> 
+    60                              <1> 
+    61                              <1> 
+    62                              <1> ;-------------
+    63                              <1> ; Interrupts
+    64                              <1> 
+    65                              <1> INTVEC_HBLANK_TIMER	equ	7
+    66                              <1> INTVEC_VBLANK_START	equ	6
+    67                              <1> INTVEC_VBLANK_TIMER	equ	5
+    68                              <1> INTVEC_DRAWING_LINE	equ	4
+    69                              <1> INTVEC_SERIAL_RECEIVE	equ	3
+    70                              <1> INTVEC_RTC_ALARM	equ	2
+    71                              <1> INTVEC_KEY_PRESS	equ	1
+    72                              <1> INTVEC_SERIAL_SEND	equ	0
+    73                              <1> 
+    74                              <1> 
+    75                              <1> 
+    76                              <1> ;-----------------
+    77                              <1> ; Useful Defines
+    78                              <1> 
+    79                              <1> %define BG_CHR(tile,pal,bank,hflip,vflip)	(((vflip) << 15) | ((hflip) << 14) | ((bank) << 13) | ((pal) << 9) | (tile))
+    80                              <1> 
+    81                              <1> %macro	ROM_HEADER	6	; Label, Segment, WSType, RomSize, SRamSize, WSSpec
+    82                              <1> 	times	((64*1024)-16)-$+%1 db 0xFF
+    83                              <1> 
+    84                              <1> 	db	0xEA	; jmpf
+    85                              <1> 	dw	%1	; Label
+    86                              <1> 	dw	%2	; Segment
+    87                              <1> 	db	0x00
+    88                              <1> 
+    89                              <1> 	db	0x42	; Developer ID
+    90                              <1> 	db	%3
+    91                              <1> 	db	0x01	; Cart number
+    92                              <1> 	db	0x00
+    93                              <1> 	db	%4
+    94                              <1> 	db	%5
+    95                              <1> 	db	%6
+    96                              <1> 	db	0x00
+    97                              <1> 	dw	0x0000	; Checksum
+    98                              <1> %endmacro
+    99                              <1> 
+   100                              <1> %macro	PADDING	1	; Number of Segment
+   101                              <1> 	times	(%1*64*1024) db 0xFF
+   102                              <1> %endmacro
+   103                              <1> 
+   104                              <1> SCREEN_WIDTH	equ	224
+   105                              <1> SCREEN_HEIGHT	equ	144
+   106                              <1> SCREEN_TWIDTH	equ	(SCREEN_WIDTH / 8)
+   107                              <1> SCREEN_THEIGHT	equ	(SCREEN_HEIGHT / 8)
+   108                              <1> MAP_WIDTH	equ	256
+   109                              <1> MAP_HEIGHT	equ	256
+   110                              <1> MAP_TWIDTH	equ	(MAP_WIDTH / 8)
+   111                              <1> MAP_THEIGHT	equ	(MAP_HEIGHT / 8)
+   112                              <1> 
+   113                              <1> 
+   114                              <1> 
+   115                              <1> ;-----------------------------------
+   116                              <1> ; I/O Ports and associated equates
+   117                              <1> 
+   118                              <1> IO_DISPLAY_CTRL	equ	0x00
+   119                              <1> BG_ON		equ	0x01
+   120                              <1> BG_OFF		equ	0x00
+   121                              <1> FG_ON		equ	0x02
+   122                              <1> FG_OFF		equ	0x00
+   123                              <1> SPR_ON		equ	0x04
+   124                              <1> SPR_OFF		equ	0x00
+   125                              <1> SPR_WIN_ON	equ	0x08
+   126                              <1> SPR_WIN_OFF	equ	0x00
+   127                              <1> FG_IN_OUT_WIN	equ	0x00
+   128                              <1> FG_IN_WIN	equ	0x10
+   129                              <1> FG_OUT_WIN	equ	0x30
+   130                              <1> 
+   131                              <1> IO_BG_PAL	equ	0x01
+   132                              <1> %define	BG_COLOR(a)	(a)
+   133                              <1> %define	BG_PAL(a)	(a << 4)
+   134                              <1> 
+   135                              <1> IO_CUR_LINE	equ	0x02
+   136                              <1> IO_LINE_COMP	equ	0x03
+   137                              <1> 
+   138                              <1> IO_SPR_TABLE	equ	0x04
+   139                              <1> %define	SPR_TABLE(a)	(a >> 9)	; Sprite Table Address must be 512 bytes aligned !
+   140                              <1> 
+   141                              <1> IO_SPR_START	equ	0x05
+   142                              <1> IO_SPR_STOP	equ	0x06
+   143                              <1> 
+   144                              <1> IO_FGBG_MAP	equ	0x07
+   145                              <1> %define	FG_MAP(a)	((a >> 11) << 4)	; FG Map Address must be 2048 bytes aligned !
+   146                              <1> %define	BG_MAP(a)	(a >> 11)		; BG Map Address must be 2048 bytes aligned !
+   147                              <1> 
+   148                              <1> IO_FG_WIN_X0	equ	0x08
+   149                              <1> IO_FG_WIN_Y0	equ	0x09
+   150                              <1> IO_FG_WIN_X1	equ	0x0A
+   151                              <1> IO_FG_WIN_Y1	equ	0x0B
+   152                              <1> 
+   153                              <1> IO_SPR_WIN_X0	equ	0x0C
+   154                              <1> IO_SPR_WIN_Y0	equ	0x0D
+   155                              <1> IO_SPR_WIN_X1	equ	0x0E
+   156                              <1> IO_SPR_WIN_Y1	equ	0x0F
+   157                              <1> 
+   158                              <1> IO_BG_X		equ	0x10
+   159                              <1> IO_BG_Y		equ	0x11
+   160                              <1> 
+   161                              <1> IO_FG_X		equ	0x12
+   162                              <1> IO_FG_Y		equ	0x13
+   163                              <1> 
+   164                              <1> IO_LCD_CTRL	equ	0x14
+   165                              <1> LCD_ON		equ	0x01
+   166                              <1> LCD_OFF		equ	0x00
+   167                              <1> 
+   168                              <1> IO_LCD_ICONS	equ	0x15
+   169                              <1> LCD_ICON_SLEEP	equ	0x01
+   170                              <1> LCD_ICON_VERTI	equ	0x02
+   171                              <1> LCD_ICON_HORIZ	equ	0x04
+   172                              <1> LCD_ICON_DOT1	equ	0x08
+   173                              <1> LCD_ICON_DOT2	equ	0x10
+   174                              <1> LCD_ICON_DOT3	equ	0x20
+   175                              <1> 
+   176                              <1> IO_PALSHADE_10	equ	0x1C
+   177                              <1> IO_PALSHADE_32	equ	0x1D
+   178                              <1> IO_PALSHADE_54	equ	0x1E
+   179                              <1> IO_PALSHADE_76	equ	0x1F
+   180                              <1> 
+   181                              <1> IO_WS_PAL_00	equ	0x20
+   182                              <1> IO_WS_PAL_01	equ	0x21
+   183                              <1> IO_WS_PAL_10	equ	0x22
+   184                              <1> IO_WS_PAL_11	equ	0x23
+   185                              <1> IO_WS_PAL_20	equ	0x24
+   186                              <1> IO_WS_PAL_21	equ	0x25
+   187                              <1> IO_WS_PAL_30	equ	0x26
+   188                              <1> IO_WS_PAL_31	equ	0x27
+   189                              <1> IO_WS_PAL_40	equ	0x28
+   190                              <1> IO_WS_PAL_41	equ	0x29
+   191                              <1> IO_WS_PAL_50	equ	0x2A
+   192                              <1> IO_WS_PAL_51	equ	0x2B
+   193                              <1> IO_WS_PAL_60	equ	0x2C
+   194                              <1> IO_WS_PAL_61	equ	0x2D
+   195                              <1> IO_WS_PAL_70	equ	0x2E
+   196                              <1> IO_WS_PAL_71	equ	0x2F
+   197                              <1> IO_WS_PAL_80	equ	0x30
+   198                              <1> IO_WS_PAL_81	equ	0x31
+   199                              <1> IO_WS_PAL_90	equ	0x32
+   200                              <1> IO_WS_PAL_91	equ	0x33
+   201                              <1> IO_WS_PAL_A0	equ	0x34
+   202                              <1> IO_WS_PAL_A1	equ	0x35
+   203                              <1> IO_WS_PAL_B0	equ	0x36
+   204                              <1> IO_WS_PAL_B1	equ	0x37
+   205                              <1> IO_WS_PAL_C0	equ	0x38
+   206                              <1> IO_WS_PAL_C1	equ	0x39
+   207                              <1> IO_WS_PAL_D0	equ	0x3A
+   208                              <1> IO_WS_PAL_D1	equ	0x3B
+   209                              <1> IO_WS_PAL_E0	equ	0x3C
+   210                              <1> IO_WS_PAL_E1	equ	0x3D
+   211                              <1> IO_WS_PAL_F0	equ	0x3E
+   212                              <1> IO_WS_PAL_F1	equ	0x3F
+   213                              <1> 
+   214                              <1> IOw_DMA_SRC	equ	0x40
+   215                              <1> IO_DMA_SRC_BANK	equ	0x42
+   216                              <1> IO_DMA_DST_BANK	equ	0x43
+   217                              <1> IOw_DMA_DST	equ	0x44
+   218                              <1> IOw_DMA_SIZE	equ	0x46
+   219                              <1> IO_DMA_CTRL	equ	0x48
+   220                              <1> DMA_START	equ	0x80
+   221                              <1> DMA_CHECK	equ	0x80
+   222                              <1> 
+   223                              <1> IOw_SNDDMA_SRC	equ	0x4A
+   224                              <1> IO_SNDDMA_BANK	equ	0x4C
+   225                              <1> IOw_SNDDMA_SIZE	equ	0x4E
+   226                              <1> IO_SNDDMA_CTRL	equ	0x52
+   227                              <1> 
+   228                              <1> IO_VIDEO_MODE	equ	0x60
+   229                              <1> VMODE_16C_CHK	equ	0xE0	; 16 colors per tile chunky mode
+   230                              <1> VMODE_16C_PLN	equ	0xC0	; 16 colors per tile planar mode
+   231                              <1> VMODE_4C	equ	0x40	; 4 colors per tile color
+   232                              <1> VMODE_4C_MONO	equ	0x00	; 4 colors per tile mono
+   233                              <1> VMODE_CLEANINIT	equ	0x0C	; (?) from FF2
+   234                              <1> 
+   235                              <1> IOw_AUDIO1_FREQ	equ	0x80	; Frequency
+   236                              <1> IOw_AUDIO2_FREQ	equ	0x82
+   237                              <1> IOw_AUDIO3_FREQ	equ	0x84
+   238                              <1> IOw_AUDIO4_FREQ	equ	0x86
+   239                              <1> 
+   240                              <1> IO_AUDIO1_VOL	equ	0x88	; Volume
+   241                              <1> IO_AUDIO2_VOL	equ	0x89
+   242                              <1> IO_AUDIO3_VOL	equ	0x8A
+   243                              <1> IO_AUDIO4_VOL	equ	0x8B
+   244                              <1> 
+   245                              <1> IO_AUDIO_SWEEP_VAL	equ	0x8C
+   246                              <1> IO_AUDIO_SWEEP_STEP	equ	0x8D
+   247                              <1> 
+   248                              <1> IO_AUDIO_NOISE_CTRL	equ	0x8E
+   249                              <1> %define	NOISE_TYPE(a)	(a)
+   250                              <1> NOISE_RESET		equ	0x08
+   251                              <1> NOISE_ENABLE		equ	0x10
+   252                              <1> 
+   253                              <1> IO_AUDIO_SAMPLE		equ	0x8F	; Sample  location
+   254                              <1> %define	AUDIO_SAMPLE(a)	(a >> 6)
+   255                              <1> 
+   256                              <1> IO_AUDIO_CTRL	equ	0x90
+   257                              <1> AUDIO_1_ON	equ	0x01
+   258                              <1> AUDIO_1_OFF	equ	0x00
+   259                              <1> AUDIO_2_ON	equ	0x02
+   260                              <1> AUDIO_2_OFF	equ	0x00
+   261                              <1> AUDIO_3_ON	equ	0x04
+   262                              <1> AUDIO_3_OFF	equ	0x00
+   263                              <1> AUDIO_4_ON	equ	0x08
+   264                              <1> AUDIO_4_OFF	equ	0x00
+   265                              <1> AUDIO_2_VOICE	equ	0x20
+   266                              <1> AUDIO_3_SWEEP	equ	0x40
+   267                              <1> AUDIO_4_NOISE	equ	0x80
+   268                              <1> 
+   269                              <1> IO_AUDIO_OUTPUT		equ	0x91
+   270                              <1> AUDIO_OUT_MONO		equ	0x01
+   271                              <1> AUDIO_OUT_STEREO	equ	0x08
+   272                              <1> %define	AUDIO_OUT_VOLUME(a)	((a & 0x03) << 1)
+   273                              <1> 
+   274                              <1> IOw_AUDIO_NOISE_CNT	equ	0x92
+   275                              <1> IO_AUDIO_VOLUME		equ	0x94	; Global Volume (4 bits)
+   276                              <1> 
+   277                              <1> IO_HARDWARE_TYPE	equ	0xA0
+   278                              <1> WS_COLOR		equ	0x02
+   279                              <1> WS_MONO			equ	0x00
+   280                              <1> 
+   281                              <1> IO_TIMER_CTRL			equ	0xA2
+   282                              <1> HBLANK_TIMER_ON			equ	0x01
+   283                              <1> HBLANK_TIMER_OFF		equ	0x00
+   284                              <1> HBLANK_TIMER_MODE_ONESHOT	equ	0x00
+   285                              <1> HBLANK_TIMER_MODE_AUTOPRESET	equ	0x02
+   286                              <1> VBLANK_TIMER_ON			equ	0x04
+   287                              <1> VBLANK_TIMER_OFF		equ	0x00
+   288                              <1> VBLANK_TIMER_MODE_ONESHOT	equ	0x00
+   289                              <1> VBLANK_TIMER_MODE_AUTOPRESET	equ	0x08
+   290                              <1> 
+   291                              <1> IOw_HBLANK_FREQ	equ	0xA4
+   292                              <1> IOw_VBLANK_FREQ	equ	0xA6
+   293                              <1> 
+   294                              <1> IO_HBLANK_CNT1	equ	0xA8	; Hblank Counter - 1/12000s
+   295                              <1> IO_HBLANK_CNT2	equ	0xA9	; Hblank Counter - 1/(12000>>8)s
+   296                              <1> IO_VBLANK_CNT1	equ	0xAA	; Vblank Counter - 1/75s
+   297                              <1> IO_VBLANK_CNT2	equ	0xAB	; Vblank Counter - 1/(75>>8)s
+   298                              <1> 
+   299                              <1> IO_INT_BASE	equ	0xB0
+   300                              <1> INT_BASE	equ	0x20
+   301                              <1> 
+   302                              <1> IO_COMM_DATA	equ	0xB1	; Communication byte
+   303                              <1> 
+   304                              <1> IO_INT_ENABLE		equ	0xB2
+   305                              <1> INT_HBLANK_TIMER	equ	0x80
+   306                              <1> INT_VBLANK_START	equ	0x40
+   307                              <1> INT_VBLANK_TIMER	equ	0x20
+   308                              <1> INT_DRAWING_LINE	equ	0x10
+   309                              <1> INT_SERIAL_RECEIVE	equ	0x08
+   310                              <1> INT_RTC_ALARM		equ	0x04
+   311                              <1> INT_KEY_PRESS		equ	0x02
+   312                              <1> INT_SERIAL_SEND		equ	0x01
+   313                              <1> 
+   314                              <1> IO_COMM_DIR		equ	0xB3	; Communication direction
+   315                              <1> COMM_RECEIVE_INT_GEN	equ	0x80
+   316                              <1> COMM_SPEED_9600		equ	0x00
+   317                              <1> COMM_SPEED_38400	equ	0x40
+   318                              <1> COMM_SEND_INT_GEN	equ	0x20
+   319                              <1> COMM_SEND_COMPLETE	equ	0x04
+   320                              <1> COMM_ERROR		equ	0x02
+   321                              <1> COMM_RECEIVE_COMPLETE	equ	0x01
+   322                              <1> 
+   323                              <1> IO_KEYPAD		equ	0xB5
+   324                              <1> KEYPAD_READ_ARROWS_V	equ	0x10
+   325                              <1> KEYPAD_READ_ARROWS_H	equ	0x20
+   326                              <1> KEYPAD_READ_BUTTONS	equ	0x40
+   327                              <1> PAD_UP			equ	0x01
+   328                              <1> PAD_RIGHT		equ	0x02
+   329                              <1> PAD_DOWN		equ	0x04
+   330                              <1> PAD_LEFT		equ	0x08
+   331                              <1> PAD_START		equ	0x02
+   332                              <1> PAD_A			equ	0x04
+   333                              <1> PAD_B			equ	0x08
+   334                              <1> 
+   335                              <1> IO_INT_ACK		equ	0xB6	; See IO_INT_ENABLE equates for values
+   336                              <1> 
+   337                              <1> IOw_INTERNAL_EEPROM_DATA	equ	0xBA
+   338                              <1> IOw_INTERNAL_EEPROM_ADDRESS	equ	0xBC
+   339                              <1> 
+   340                              <1> IOw_INTERNAL_EEPROM_CTRL	equ	0xBE
+   341                              <1> IEEPROM_INIT			equ	0x80
+   342                              <1> IEEPROM_PROTECT			equ	0x40
+   343                              <1> IEEPROM_WRITE			equ	0x20
+   344                              <1> IEEPROM_READ			equ	0x10
+   345                              <1> IEEPROM_WRITE_COMPLETE		equ	0x02
+   346                              <1> IEEPROM_READ_COMPLETE		equ	0x01
+   347                              <1> 
+   348                              <1> IO_ROM_BASE_BANK	equ	0xC0
+   349                              <1> IO_SRAM_BANK		equ	0xC1
+   350                              <1> IO_ROM_BANK_SEGMENT2	equ	0xC2
+   351                              <1> IO_ROM_BANK_SEGMENT3	equ	0xC3
+   352                              <1> 
+   353                              <1> IO_RTC_COMMAND		equ	0xCA
+   354                              <1> RTC_COMMAND_RESET	equ	0x10
+   355                              <1> RTC_COMMAND_ALARM	equ	0x12
+   356                              <1> RTC_COMMAND_SET_TIME	equ	0x14
+   357                              <1> RTC_COMMAND_GET_TIME	equ	0x15
+   358                              <1> RTC_COMMAND_ACK		equ	0x80
+   359                              <1> 
+   360                              <1> IO_RTC_DATA	equ	0xCB
+     4                                  
+     5                                  MAP_FG equ WSC_TILE_BANK1 - MAP_SIZE
+     6                                  MAP_BG equ MAP_FG - MAP_SIZE
+     7                                  SPRITE_TABLE equ MAP_BG - SPR_TABLE_SIZE
+     8                                  
+     9                                  PALETTE_SIZE equ 16 * 2
+    10                                  
+    11                                  NUMBER_TILES equ 64
+    12                                  GFX_TILE_SIZE equ 32
+    13                                  
+    14                                  LITEW equ 3
+    15                                  LITEH equ 3
+    16                                  
+    17                                  STATE_GAME equ 0
+    18                                  STATE_WON equ 1
+    19                                  STATE_TITLE equ 2
+    20                                  
+    21                                  BLINK_OPEN equ 1
+    22                                  BLINK_CLOSED equ 2
+    23                                  
+    24                                  ; ram
+    25                                  section .bss
+    26                                  
+    27 00000000 <res 400h>              	interrupts: resb 0x400
+    28                                  	
+    29 00000400 ??                      	vblankdone: resb 1
+    30 00000401 ??                      	tic: resb 1
+    31                                  	
+    32 00000402 <res 19h>               	lites: resb 5 * 5
+    33                                  	
+    34 0000041B ????                    	movecount: resw 1
+    35                                  	
+    36 0000041D ??                      	px: resb 1
+    37 0000041E ??                      	py: resb 1
+    38                                  
+    39 0000041F ????                    	last_dpad: resw 1
+    40 00000421 ????                    	last_buttons: resw 1
+    41                                  	
+    42 00000423 ??                      	flip_x: resb 1
+    43 00000424 ??                      	flip_y: resb 1
+    44 00000425 ??                      	flip_w: resb 1
+    45 00000426 ??                      	flip_h: resb 1
+    46                                  	
+    47 00000427 ??                      	timertics: resb 1
+    48 00000428 ????                    	timer: resw 1
+    49                                  	
+    50 0000042A ????                    	state: resw 1
+    51                                  	
+    52 0000042C ????                    	blink_state: resw 1
+    53 0000042E ????                    	blink_timer: resw 1
+    54                                  	
+    55                                  	rnd_val:
+    56 00000430 ????                    	rnd_val_low: resw 1
+    57 00000432 ????                    	rnd_val_high: resw 1
+    58                                  	
+    59                                  	%include "music_bss.asm"
+     1                              <1> 
+     2                              <1> 	; pcm waveform memory
+     3 00000434 <res Ch>            <1> 	alignb 64
+     4                              <1> 	pcm_waveforms:
+     5 00000440 <res 10h>           <1> 	pcm_waveform_1: resb 16
+     6 00000450 <res 10h>           <1> 	pcm_waveform_2: resb 16
+     7 00000460 <res 10h>           <1> 	pcm_waveform_3: resb 16
+     8 00000470 <res 10h>           <1> 	pcm_waveform_4: resb 16
+     9                              <1> 	
+    10                              <1> 	; start of the song data
+    11 00000480 ????                <1> 	music_data: resw 1
+    12                              <1> 	; current instruction pointer
+    13 00000482 ????                <1> 	music_ptr: resw 1
+    14                              <1> 	; instruction data pointer
+    15 00000484 ????                <1> 	music_instructions: resw 1
+    16                              <1> 	; instrument data pointer
+    17 00000486 ????                <1> 	music_instruments: resw 1
+    18                              <1> 	; noise enabled?
+    19 00000488 ????                <1> 	music_noise: resw 1
+    20                              <1> 	
+    21                              <1> 	; current tic
+    22 0000048A ????                <1> 	music_tic: resw 1
+    23                              <1> 	; we're waiting for a certain tic
+    24 0000048C ????                <1> 	music_waiting: resw 1
+    25                              <1> 	; tic we're waiting for
+    26 0000048E ????                <1> 	music_wait_tic: resw 1
+    27                              <1> 	
+    28                              <1> 	; channel volumes
+    29                              <1> 	music_vols:
+    30 00000490 ??                  <1> 	music_vol_0: resb 1
+    31 00000491 ??                  <1> 	music_vol_1: resb 1
+    32 00000492 ??                  <1> 	music_vol_2: resb 1
+    33 00000493 ??                  <1> 	music_vol_3: resb 1
+    34                              <1> 	
+    35                              <1> 	struc music_env
+    36 00000000 ????                <1> 		.start resw 1
+    37 00000002 ????                <1> 		.ptr resw 1
+    38 00000004 ????                <1> 		.end resw 1
+    39 00000006 ????                <1> 		.pad resw 1
+    40                              <1> 	endstruc 
+    41                              <1> 	
+    42                              <1> 	; chennel envelopes
+    43                              <1> 	music_envelopes:
+    44 00000494 ????????????????    <1> 	resb music_env_size
+    45 0000049C ????????????????    <1> 	resb music_env_size
+    46 000004A4 ????????????????    <1> 	resb music_env_size
+    47 000004AC ????????????????    <1> 	resb music_env_size
+    60                                  
+    61                                  ; code	
+    62                                  section .code
+    63                                  
+    64                                  	org 0x0000
+    65                                  	cpu 186 
+    66                                  	bits 16
+    67                                  
+    68                                  initialize:
+    69                                  
+    70                                  	; disable interrupts on the cpu
+    71 00000000 FA                      	cli
+    72                                  	
+    73                                  	; disable wonderswan interrupts
+    74 00000001 B000                    	mov al, 0
+    75 00000003 E6B2                    	out IO_INT_ENABLE, al
+    76                                  	
+    77                                  	; direction flag forward
+    78 00000005 FC                      	cld
+    79                                  
+    80                                  	; extra segment 0
+    81 00000006 B80000                  	mov ax, 0x0000	
+    82 00000009 8EC0                    	mov es, ax
+    83                                  	
+    84                                  	; data segment = rom
+    85 0000000B B800F0                  	mov ax, 0xf000
+    86 0000000E 8ED8                    	mov ds, ax
+    87                                  	
+    88                                  	; setup stack
+    89 00000010 B80000                  	mov ax, 0x0000
+    90 00000013 89C5                    	mov bp, ax
+    91 00000015 8ED0                    	mov ss, ax
+    92 00000017 BCFEFD                  	mov sp, WSC_STACK
+    93                                  
+    94                                  	; clear Ram
+    95 0000001A B80000                  	mov ax, 0x0000
+    96 0000001D BF0001                  	mov di, 0x0100
+    97 00000020 B9FE3F                  	mov cx, 0x4000 - 2
+    98 00000023 F3AB                    	rep stosw
+    99                                  
+   100 00000025 B000                    	mov al, 0
+   101 00000027 E6C1                    	out IO_SRAM_BANK, al 
+   102                                  
+   103                                  	; set video mode
+   104 00000029 E460                    	in al, IO_VIDEO_MODE
+   105 0000002B 0CCC                    	or al, VMODE_16C_PLN | VMODE_CLEANINIT
+   106 0000002D E660                    	out IO_VIDEO_MODE, al
+   107                                  	
+   108                                  	; set sprite table location
+   109 0000002F B017                    	mov al, SPR_TABLE(SPRITE_TABLE)
+   110 00000031 E604                    	out IO_SPR_TABLE, al
+   111                                  	
+   112                                  	; map data locations
+   113 00000033 B87600                  	mov ax, BG_MAP(MAP_BG) | FG_MAP(MAP_FG)
+   114 00000036 E707                    	out IO_FGBG_MAP, ax
+   115                                  	
+   116                                  	; display modes
+   117 00000038 B007                    	mov al, BG_ON | FG_ON | SPR_ON
+   118 0000003A E600                    	out IO_DISPLAY_CTRL, al
+   119                                  	
+   120                                  	; switch on display
+   121 0000003C E414                    	in al, IO_LCD_CTRL
+   122 0000003E 0C01                    	or al, LCD_ON
+   123 00000040 E614                    	out IO_LCD_CTRL, al
+   124                                  	
+   125                                  	; main palette
+   126 00000042 BE[5311]                	mov si, tile_palette
+   127 00000045 BF00FE                  	mov di, WSC_PALETTES
+   128 00000048 B91000                  	mov cx, 16
+   129 0000004B F3A5                    	rep movsw
+   130                                  	
+   131                                  	; title screen palette
+   132 0000004D BE[9331]                	mov si, title_palette
+   133 00000050 BF20FE                  	mov di, WSC_PALETTES + PALETTE_SIZE
+   134 00000053 B91000                  	mov cx, 16
+   135 00000056 F3A5                    	rep movsw
+   136                                  	
+   137                                  	; game over screen palette
+   138 00000058 BE[5311]                	mov si, tile_palette
+   139 0000005B BF80FE                  	mov di, WSC_PALETTES + PALETTE_SIZE * 4
+   140 0000005E B91000                  	mov cx, 16
+   141 00000061 F3A5                    	rep movsw
+   142                                  	
+   143                                  	; sprite palette
+   144 00000063 BE[7311]                	mov si, sprite_palette
+   145 00000066 BF00FF                  	mov di, WSC_PALETTES + PALETTE_SIZE * 8
+   146 00000069 B91000                  	mov cx, 16
+   147 0000006C F3A5                    	rep movsw
+   148                                  
+   149                                  	; copy tile graphics into memory
+   150 0000006E BE[9311]                	mov si, tiles
+   151 00000071 BF0040                  	mov di, WSC_TILE_BANK1
+   152 00000074 B90010                  	mov cx, (16 * $100)
+   153 00000077 F3A5                    	rep movsw
+   154                                  	
+   155                                  	; copy title screen graphics into memory
+   156 00000079 BE[B331]                	mov si, title_tiles
+   157 0000007C BF0060                  	mov di, WSC_TILE_BANK1 + (32 * 256)
+   158 0000007F B90010                  	mov cx, (16 * $100)
+   159 00000082 F3A5                    	rep movsw
+   160                                  	
+   161                                  	; clear sprites
+   162 00000084 B8FFFF                  	mov ax, 0xffff
+   163 00000087 B90001                  	mov cx, 128 * 2
+   164 0000008A BF002E                  	mov di, SPRITE_TABLE
+   165 0000008D F3AB                    	rep stosw
+   166                                  
+   167                                  	; enable sprites
+   168 0000008F B000                    	mov al, 0
+   169 00000091 E605                    	out IO_SPR_START, al
+   170                                  	
+   171                                  	; 4 for cursor + 25 for avatar's lites + 4 for eyes
+   172 00000093 B07F                    	mov al, 0x7f
+   173 00000095 E606                    	out IO_SPR_STOP, al
+   174                                  
+   175                                  	; cursor pointer
+   176                                  	; hardcoded as sprites 0-3 for now
+   177 00000097 26C706002E0200          	mov word [es:SPRITE_TABLE], 0x0002
+   178 0000009E 26C706022E0000          	mov word [es:SPRITE_TABLE + 2], 0x0000
+   179                                  	
+   180 000000A5 26C706042E0300          	mov word [es:SPRITE_TABLE + 4], 0x0003
+   181 000000AC 26C706062E0008          	mov word [es:SPRITE_TABLE + 6], 0x0800
+   182                                  	
+   183 000000B3 26C706082E0400          	mov word [es:SPRITE_TABLE + 8], 0x0004
+   184 000000BA 26C7060A2E0800          	mov word [es:SPRITE_TABLE + 10], 0x0008
+   185                                  	
+   186 000000C1 26C7060C2E0500          	mov word [es:SPRITE_TABLE + 12], 0x0005
+   187 000000C8 26C7060E2E0808          	mov word [es:SPRITE_TABLE + 14], 0x0808
+   188                                  
+   189                                  	; interrupts are 4 bytes (2 words) long and are stored in the first 0x100 bytes of ram
+   190                                  	; the first word is the address of the interrupt code
+   191                                  	; the second word is the segment the interrupt code is in
+   192                                  	
+   193                                  	; which interrupt we start counting from for the wonderswan interrupts
+   194                                  	; e.g. if INT_BASE is 32 then all of the wonderswan interrupts are at interrupts 32 to 39
+   195 000000CF B82000                  	mov ax, INT_BASE
+   196 000000D2 E7B0                    	out IO_INT_BASE, ax
+   197                                  	
+   198                                  	; set up vblank interrupt in interrupt vector table
+   199                                  	; get the interrupt number
+   200 000000D4 83C006                  	add ax, INTVEC_VBLANK_START
+   201                                  	; multiply it by 4 to get the address of the interrupt in the table
+   202 000000D7 C1E002                  	shl ax, 2
+   203 000000DA 89C7                    	mov di, ax
+   204                                  	; put the interrupt location and segment in the table
+   205 000000DC 26C705[FD02]            	mov word [es:di], vblank_interrupt
+   206 000000E1 83C702                  	add di, 2
+   207 000000E4 26C70500F0              	mov word [es:di], 0xf000
+   208                                  	
+   209                                  	; acknowledge all interrupts
+   210 000000E9 B0FF                    	mov al, 0xff
+   211 000000EB E6B6                    	out IO_INT_ACK, al
+   212                                  	
+   213                                  	; clear HBL & Timer
+   214 000000ED B80000                  	mov ax, 0
+   215 000000F0 E7A4                    	out IOw_HBLANK_FREQ, ax
+   216 000000F2 E6A2                    	out IO_TIMER_CTRL, al
+   217                                  	
+   218                                  	; set pcm waveform location
+   219 000000F4 BA8F00                  	mov dx, IO_AUDIO_SAMPLE
+   220 000000F7 B8[4004]                	mov ax, pcm_waveforms
+   221 000000FA C1E806                  	shr ax, 6
+   222 000000FD EE                      	out dx, al
+   223                                  	
+   224                                  	; init values
+   225 000000FE B000                    	mov al, 0
+   226 00000100 26A2[0004]              	mov [es:vblankdone], al
+   227                                  	
+   228                                  	; random number seed
+   229 00000104 B887AC                  	mov ax, 0xac87
+   230 00000107 26A3[3004]              	mov [es:rnd_val_low], ax
+   231 0000010B 26A3[3204]              	mov [es:rnd_val_high], ax
+   232                                  	
+   233                                  	; play music
+   234 0000010F B8[990D]                	mov ax, song2
+   235 00000112 E81E66                  	call music_init
+   236                                  	
+   237                                  	; start at title screen
+   238 00000115 B80200                  	mov ax, STATE_TITLE
+   239 00000118 26A3[2A04]              	mov word [es:state], ax
+   240 0000011C E88202                  	call draw_title
+   241                                  
+   242                                  	; enable vblank interrupt
+   243 0000011F B040                    	mov al, INT_VBLANK_START 
+   244 00000121 E6B2                    	out IO_INT_ENABLE, al
+   245                                  
+   246                                  	; enable interrupts on the cpu
+   247 00000123 FB                      	sti
+   248                                  
+   249                                  main_loop:
+   250                                  
+   251 00000124 F4                      	hlt
+   252                                  	
+   253                                  	; wait for vblankdone == 1
+   254 00000125 26A0[0004]              	mov al, [es:vblankdone]
+   255 00000129 08C0                    	or al, al
+   256 0000012B 74F7                    	jz main_loop
+   257                                  	
+   258                                  	; clear vblankdone flag
+   259 0000012D B000                    	mov al, 0
+   260 0000012F 26A2[0004]              	mov [es:vblankdone], al
+   261                                  	
+   262                                  	; update tic counter
+   263 00000133 26FE06[0104]            	inc byte [es:tic]
+   264                                  	
+   265                                  	; jump to code for this game state
+   266 00000138 268B1E[2A04]            	mov word bx, [es:state]
+   267 0000013D D1E3                    	shl bx, 1
+   268 0000013F 81C3[6207]              	add bx, main_loop_jump_table
+   269 00000143 3E8B1F                  	mov word bx, [ds:bx]
+   270 00000146 FFE3                    	jmp bx
+   271                                  	
+   272                                  main_loop_game:
+   273                                  	
+   274                                  	; update and redraw the game timer
+   275 00000148 E83C05                  	call update_timer
+   276 0000014B E8B803                  	call draw_timer
+   277                                  
+   278 0000014E E8AA04                  	call update_avatar_blink
+   279                                  	
+   280 00000151 E84966                  	call music_update
+   281                                  
+   282                                  	; poll dpad
+   283 00000154 B020                    	mov al, KEYPAD_READ_ARROWS_H
+   284 00000156 E6B5                    	out IO_KEYPAD, al
+   285 00000158 90                      	nop
+   286 00000159 90                      	nop
+   287 0000015A 90                      	nop
+   288                                  	
+   289                                  	; get dpad
+   290 0000015B E5B5                    	in ax, IO_KEYPAD
+   291                                  	
+   292                                  	; get last frame's dpad state
+   293 0000015D 268B1E[1F04]            	mov bx, [es:last_dpad]
+   294                                  	
+   295                                  	; update last dpad state
+   296 00000162 26A3[1F04]              	mov [es:last_dpad], ax
+   297                                  	
+   298                                  	; this makes ax contain dpad buttons which 
+   299                                  	; were 0 last frame and 1 this frame
+   300 00000166 31D8                    	xor ax, bx,
+   301 00000168 262306[1F04]            	and ax, [es:last_dpad]
+   302                                  	
+   303                                  joy_up:
+   304 0000016D A90100                  	test ax, PAD_UP
+   305 00000170 7405                    	jz joy_down
+   306                                  	
+   307 00000172 26FE0E[1E04]            	dec byte [es:py]
+   308                                  
+   309                                  joy_down:
+   310 00000177 A90400                  	test ax, PAD_DOWN
+   311 0000017A 7405                    	jz joy_left
+   312                                  	
+   313 0000017C 26FE06[1E04]            	inc byte [es:py]
+   314                                  	
+   315                                  joy_left:
+   316 00000181 A90800                  	test ax, PAD_LEFT
+   317 00000184 7405                    	jz joy_right
+   318                                  	
+   319 00000186 26FE0E[1D04]            	dec byte [es:px]
+   320                                  	
+   321                                  joy_right:
+   322 0000018B A90200                  	test ax, PAD_RIGHT
+   323 0000018E 7405                    	jz joy_dir_done
+   324                                  	
+   325 00000190 26FE06[1D04]            	inc byte [es:px]
+   326                                  
+   327                                  joy_dir_done:
+   328                                  
+   329                                  	; keep x coords in range 0-4
+   330 00000195 26A0[1D04]              	mov al, [es:px]
+   331                                  	
+   332                                  joy_xtest1:
+   333 00000199 3C05                    	cmp al, 0x5
+   334 0000019B 7502                    	jnz joy_xtest2
+   335                                  	
+   336 0000019D B000                    	mov al, 0x0
+   337                                  	
+   338                                  joy_xtest2:
+   339 0000019F 3CFF                    	cmp al, 0xff
+   340 000001A1 7502                    	jnz joy_xtest_done
+   341 000001A3 B004                    	mov al, 0x4
+   342                                  
+   343                                  joy_xtest_done:
+   344                                  	
+   345                                  	; update px 
+   346 000001A5 26A2[1D04]              	mov [es:px], al
+   347                                  
+   348                                  	; keep y coords in range 0-4
+   349 000001A9 26A0[1E04]              	mov al, [es:py]
+   350                                  	
+   351                                  joy_ytest1:
+   352 000001AD 3C05                    	cmp al, 0x5
+   353 000001AF 7502                    	jnz joy_ytest2
+   354                                  	
+   355 000001B1 B000                    	mov al, 0x0
+   356                                  	
+   357                                  joy_ytest2:
+   358 000001B3 3CFF                    	cmp al, 0xff
+   359 000001B5 7502                    	jnz joy_ytest_done
+   360                                  	
+   361 000001B7 B004                    	mov al, 0x4
+   362                                  	
+   363                                  joy_ytest_done:	
+   364                                  
+   365                                  	; update py
+   366 000001B9 26A2[1E04]              	mov [es:py], al
+   367                                  
+   368                                  	; update cursor position
+   369 000001BD E88203                  	call update_cursor
+   370                                  
+   371                                  	; poll buttons
+   372 000001C0 B040                    	mov al, KEYPAD_READ_BUTTONS
+   373 000001C2 E6B5                    	out IO_KEYPAD, al
+   374 000001C4 90                      	nop
+   375 000001C5 90                      	nop
+   376 000001C6 90                      	nop
+   377                                  	
+   378                                  	; get buttons
+   379 000001C7 E5B5                    	in ax, IO_KEYPAD
+   380                                  	
+   381 000001C9 268B1E[2104]            	mov bx, [es:last_buttons]
+   382 000001CE 26A3[2104]              	mov [es:last_buttons], ax
+   383                                  	
+   384                                  	; this makes ax contain buttons which 
+   385                                  	; were 0 last frame and 1 this frame
+   386 000001D2 31D8                    	xor ax, bx
+   387 000001D4 262306[2104]            	and ax, [es:last_buttons]
+   388                                  
+   389                                  joy_a:
+   390                                  
+   391 000001D9 A90400                  	test ax, PAD_A
+   392 000001DC 7424                    	jz joy_done
+   393                                  
+   394                                  	; increase move counter, stored as bcd
+   395 000001DE 26A1[1B04]              	mov ax, [es:movecount]
+   396                                  	
+   397                                  	; increment and bcd correct first two digits, store in bl
+   398 000001E2 FEC0                    	inc al
+   399 000001E4 27                      	daa
+   400 000001E5 88C3                    	mov bl, al
+   401                                  	
+   402                                  	; increment and bcd correct second two digits, store in bh
+   403 000001E7 88E0                    	mov al, ah
+   404 000001E9 1400                    	adc al, 0
+   405 000001EB 27                      	daa
+   406 000001EC 88C7                    	mov bh, al
+   407                                  	
+   408                                  	; update value in ram
+   409 000001EE 26891E[1B04]            	mov [es:movecount], bx
+   410                                  	
+   411 000001F3 E8D402                  	call draw_movecount
+   412                                  	
+   413 000001F6 E85402                  	call flip_lites
+   414 000001F9 E8C001                  	call draw_lites
+   415 000001FC E8E403                  	call update_avatar_lites
+   416                                  	
+   417 000001FF E85404                  	call check_win
+   418                                  
+   419                                  joy_done:
+   420                                  	
+   421 00000202 E91FFF                  	jmp main_loop
+   422                                  	
+   423                                  main_loop_won:
+   424                                  
+   425 00000205 E89565                  	call music_update
+   426                                  	
+   427                                  	; poll buttons
+   428 00000208 B040                    	mov al, KEYPAD_READ_BUTTONS
+   429 0000020A E6B5                    	out IO_KEYPAD, al
+   430 0000020C 90                      	nop
+   431 0000020D 90                      	nop
+   432 0000020E 90                      	nop
+   433                                  	
+   434                                  	; get buttons
+   435 0000020F E5B5                    	in ax, IO_KEYPAD
+   436                                  	
+   437                                  	; start button restarts
+   438 00000211 83E002                  	and ax, PAD_START
+   439 00000214 7503E90BFF              	jz main_loop
+   440                                  	
+   441                                  	; restart game
+   442                                  	
+   443                                  	; hide foreground
+   444 00000219 B005                    	mov al, BG_ON | SPR_ON
+   445 0000021B E600                    	out IO_DISPLAY_CTRL, al
+   446                                  
+   447 0000021D E8F000                  	call init_game
+   448                                  	
+   449 00000220 E86E01                  	call draw_game_bg
+   450 00000223 E89601                  	call draw_lites
+   451 00000226 E8BA03                  	call update_avatar_lites
+   452 00000229 E89E02                  	call draw_movecount
+   453 0000022C E8D702                  	call draw_timer	
+   454                                  	
+   455 0000022F B8[8C0B]                	mov ax, music_test
+   456 00000232 E8FE64                  	call music_init
+   457                                  	
+   458 00000235 E9ECFE                  	jmp main_loop
+   459                                  	
+   460                                  main_loop_title:
+   461                                  
+   462                                  	; poll buttons
+   463 00000238 B040                    	mov al, KEYPAD_READ_BUTTONS
+   464 0000023A E6B5                    	out IO_KEYPAD, al
+   465 0000023C 90                      	nop
+   466 0000023D 90                      	nop
+   467 0000023E 90                      	nop
+   468                                  	
+   469                                  	; get buttons
+   470 0000023F E5B5                    	in ax, IO_KEYPAD
+   471                                  	
+   472                                  	; start button restarts
+   473 00000241 83E002                  	and ax, PAD_START
+   474 00000244 7423                    	jz title_continue
+   475                                  	
+   476 00000246 E8C700                  	call init_game
+   477 00000249 E82703                  	call init_avatar
+   478 0000024C E84201                  	call draw_game_bg
+   479 0000024F E86A01                  	call draw_lites
+   480 00000252 E88E03                  	call update_avatar_lites
+   481 00000255 E87202                  	call draw_movecount
+   482 00000258 E8AB02                  	call draw_timer
+   483                                  	
+   484                                  	; set display mode
+   485 0000025B B005                    	mov al, BG_ON | SPR_ON
+   486 0000025D E600                    	out IO_DISPLAY_CTRL, al
+   487                                  	
+   488 0000025F B80000                  	mov ax, STATE_GAME
+   489 00000262 26A3[2A04]              	mov [es:state], ax
+   490                                  	
+   491 00000266 E9BBFE                  	jmp main_loop
+   492                                  
+   493                                  title_continue:
+   494                                  
+   495 00000269 E83165                  	call music_update
+   496                                  
+   497 0000026C 26A1[0104]              	mov ax, [es:tic]
+   498 00000270 83E003                  	and ax, 0x3
+   499 00000273 7403E9ACFE              	jnz main_loop
+   500                                  
+   501                                  	; PLANE 1
+   502                                  	;
+   503                                  	; scroll blue diamond/plane 1 right for top two tiles
+   504 00000278 B90800                  	mov cx, 8
+   505 0000027B BF2060                  	mov di, WSC_TILE_BANK1 + (256 * GFX_TILE_SIZE) + GFX_TILE_SIZE
+   506                                  	
+   507                                  	title_scroll_1:
+   508                                  		; get a row of pixels from the top two tiles
+   509 0000027E 268A05                  		mov al, [es:di]
+   510 00000281 268A6540                		mov ah, [es:di + (GFX_TILE_SIZE * 2)]
+   511                                  		; rotate it around
+   512 00000285 D1C8                    		ror ax, 1
+   513                                  		; write it back
+   514 00000287 268805                  		mov [es:di], al
+   515 0000028A 26886540                		mov [es:di + (GFX_TILE_SIZE * 2)], ah
+   516 0000028E 83C704                  		add di, 4
+   517 00000291 E0EB                    		loopnz title_scroll_1
+   518                                  
+   519                                  	; PLANE 2
+   520                                  	;
+   521                                  	; scroll cyan circle/plane 2 downwards for leftmost tiles
+   522                                  	; start at the bottom byte of the graphics data and work our way up
+   523 00000293 B90F00                  	mov cx, 15
+   524 00000296 BF5D60                  	mov di, WSC_TILE_BANK1 + (256 * GFX_TILE_SIZE) + GFX_TILE_SIZE + (GFX_TILE_SIZE * 2) + 1 - 4
+   525 00000299 89FE                    	mov si, di
+   526                                  	
+   527                                  	; keep the bottom row byte around
+   528 0000029B 268A1D                  	mov bl, [es:di]
+   529                                  	
+   530                                  	title_scroll_2:
+   531                                  		; replace current byte with the one below it
+   532 0000029E 268A45FC                		mov al, [es:di-4]
+   533 000002A2 268805                  		mov [es:di], al
+   534                                  
+   535 000002A5 83EF04                  		sub di, 4
+   536 000002A8 E0F4                    		loopnz title_scroll_2
+   537                                  		
+   538                                  	; update top row with old bottom row byte
+   539 000002AA 26881D                  	mov [es:di], bl
+   540                                  
+   541 000002AD 26A1[0104]              	mov ax, [es:tic]
+   542 000002B1 83E007                  	and ax, 0x7
+   543 000002B4 7403E96BFE              	jnz main_loop
+   544                                  
+   545                                  	; PLANE 3
+   546                                  	;
+   547                                  	; scroll green triangle/plane 3 upwards for rightmost tiles	
+   548                                  	; start at the top byte of the graphics data and work our way down
+   549 000002B9 B90F00                  	mov cx, 15
+   550 000002BC BF6260                  	mov di, WSC_TILE_BANK1 + (256 * GFX_TILE_SIZE) + GFX_TILE_SIZE + (GFX_TILE_SIZE * 2) + 2
+   551 000002BF 89FE                    	mov si, di
+   552                                  	
+   553                                  	; keep the top row byte around
+   554 000002C1 268A1D                  	mov bl, [es:di]
+   555                                  	
+   556                                  	title_scroll_3:
+   557                                  		; replace current byte with the one above it
+   558 000002C4 268A4504                		mov al, [es:di+4]
+   559 000002C8 268805                  		mov [es:di], al
+   560                                  
+   561 000002CB 83C704                  		add di, 4
+   562 000002CE E0F4                    		loopnz title_scroll_3
+   563                                  	
+   564                                  	; update bottom row with old top row byte
+   565 000002D0 26881D                  	mov [es:di], bl
+   566                                  
+   567 000002D3 26A1[0104]              	mov ax, [es:tic]
+   568 000002D7 83E00F                  	and ax, 0xf
+   569 000002DA 7403E945FE              	jnz main_loop
+   570                                  
+   571                                  	; PLANE 4
+   572                                  	;
+   573                                  	; scroll yellow square/plane 4 left for bottom two tiles
+   574 000002DF B90800                  	mov cx, 8
+   575 000002E2 BF4360                  	mov di, WSC_TILE_BANK1 + (256 * GFX_TILE_SIZE) + GFX_TILE_SIZE + GFX_TILE_SIZE + 3
+   576                                  	
+   577                                  	title_scroll_4:
+   578                                  		; get a row of pixels from the top two tiles
+   579 000002E5 268A05                  		mov al, [es:di]
+   580 000002E8 268A6540                		mov ah, [es:di + (GFX_TILE_SIZE * 2)]
+   581                                  		; rotate it around
+   582 000002EC D1C0                    		rol ax, 1
+   583                                  		; write it back
+   584 000002EE 268805                  		mov [es:di], al
+   585 000002F1 26886540                		mov [es:di + (GFX_TILE_SIZE * 2)], ah
+   586 000002F5 83C704                  		add di, 4
+   587 000002F8 E0EB                    		loopnz title_scroll_4
+   588                                  	
+   589 000002FA E927FE                  	jmp main_loop
+   590                                  
+   591                                  vblank_interrupt:
+   592 000002FD 50                      	push ax
+   593 000002FE 51                      	push cx
+   594 000002FF 57                      	push di
+   595                                  	
+   596 00000300 B001                    	mov al, 1
+   597 00000302 26A2[0004]              	mov [es:vblankdone], al
+   598                                  	
+   599                                  	;acknowledge vblank
+   600 00000306 E4B6                    	in al, IO_INT_ACK
+   601 00000308 0C40                    	or al, INT_VBLANK_START
+   602 0000030A E6B6                    	out IO_INT_ACK, al
+   603                                  	
+   604 0000030C 5F                      	pop di
+   605 0000030D 59                      	pop cx
+   606 0000030E 58                      	pop ax
+   607 0000030F CF                      	iret
+   608                                  	
+   609                                  init_game:
+   610                                  
+   611                                  	; reset cursor position
+   612 00000310 B80000                  	mov ax, 0
+   613 00000313 26A2[1D04]              	mov byte [es:px], al
+   614 00000317 26A2[1E04]              	mov byte [es:py], al
+   615                                  	
+   616                                  	; reset buttons
+   617 0000031B 26A3[1F04]              	mov [es:last_dpad], ax
+   618 0000031F 26A3[2104]              	mov [es:last_buttons], ax
+   619                                  	
+   620                                  	; reset timer
+   621 00000323 26A2[2704]              	mov [es:timertics], al
+   622 00000327 26A3[2804]              	mov [es:timer], ax
+   623                                  	
+   624                                  	; reset movecount
+   625 0000032B 26A3[1B04]              	mov [es:movecount], ax	
+   626                                  	
+   627                                  	; set game state
+   628 0000032F B80000                  	mov ax, STATE_GAME
+   629 00000332 26A3[2A04]              	mov [es:state], ax
+   630                                  
+   631                                  	; set lites to off
+   632 00000336 B80000                  	mov ax, 0
+   633 00000339 B91900                  	mov cx, 5 * 5
+   634 0000033C BF[0204]                	mov di, lites
+   635 0000033F F3AA                    	rep stosb
+   636                                  	
+   637                                  	; number of points to flip at the start (4..19)
+   638 00000341 E8C903                  	call rnd32
+   639 00000344 83E00F                  	and ax, 0xf
+   640 00000347 83C004                  	add ax, 4
+   641 0000034A 89C1                    	mov cx, ax
+   642 0000034C BF[0204]                	mov di, lites
+   643                                  	
+   644                                  init_game_lites_loop:
+   645                                  
+   646                                  	; flip random point
+   647 0000034F E8BB03                  	call rnd32
+   648                                  	; reduce 32 bit number to 16 bit so the division doesn't overflow
+   649 00000352 31D0                    	xor ax, dx
+   650 00000354 BA0000                  	mov dx, 0
+   651 00000357 2EF736[6807]            	div word [cs:rnd_lites_divisor]
+   652                                  	; use modulus as offset
+   653 0000035C 89D3                    	mov bx, dx
+   654 0000035E 268A01                  	mov al, [es:di+bx]
+   655 00000361 F6D0                    	not al
+   656 00000363 2401                    	and al, 0x1
+   657 00000365 268801                  	mov [es:di+bx], al
+   658                                  
+   659 00000368 E0E5                    	loopnz init_game_lites_loop
+   660                                  
+   661                                  init_game_check_solvability:
+   662                                  
+   663                                  	; if the board isn't solvable, ax will contain 1
+   664 0000036A E84C03                  	call check_solvability
+   665 0000036D 83E001                  	and ax, 1
+   666                                  	
+   667 00000370 741E                    	jz init_game_done
+   668                                  	
+   669                                  	; flip random point
+   670 00000372 BF[0204]                	mov di, lites
+   671 00000375 E89503                  	call rnd32
+   672                                  	; reduce 32 bit number to 16 bit so the division doesn't overflow
+   673 00000378 31D0                    	xor ax, dx
+   674 0000037A BA0000                  	mov dx, 0
+   675 0000037D 2EF736[6807]            	div word [cs:rnd_lites_divisor]
+   676                                  	; use modulus as offset
+   677 00000382 89D3                    	mov bx, dx
+   678 00000384 268A01                  	mov al, [es:di+bx]
+   679 00000387 F6D0                    	not al
+   680 00000389 2401                    	and al, 0x1
+   681 0000038B 268801                  	mov [es:di+bx], al
+   682                                  	
+   683 0000038E EBDA                    	jmp init_game_check_solvability
+   684                                  	
+   685                                  init_game_done:
+   686                                  
+   687 00000390 C3                      	ret
+   688                                  
+   689                                  draw_game_bg:
+   690                                  
+   691                                  	; set bg color for when there's no pixel data
+   692 00000391 B000                    	mov al, BG_COLOR(0) | BG_PAL(0)
+   693 00000393 E601                    	out IO_BG_PAL, al
+   694                                  	
+   695                                  	; draw background
+   696 00000395 BE[B351]                	mov si, litemap
+   697 00000398 BF0030                  	mov di, MAP_BG
+   698 0000039B B94002                  	mov cx, (32 * 18)
+   699 0000039E F3A5                    	rep movsw
+   700                                  
+   701 000003A0 C3                      	ret
+   702                                  	
+   703                                  draw_title:
+   704                                  
+   705                                  	; set bg color for when there's no pixel data
+   706 000003A1 B010                    	mov al, BG_COLOR(0) | BG_PAL(1)
+   707 000003A3 E601                    	out IO_BG_PAL, al
+   708                                  	
+   709                                  	; draw background
+   710 000003A5 BE[3356]                	mov si, titlemap_bg
+   711 000003A8 BF0030                  	mov di, MAP_BG
+   712 000003AB B90004                  	mov cx, (32 * 32)
+   713 000003AE F3A5                    	rep movsw
+   714                                  	
+   715                                  	; draw background
+   716 000003B0 BE[335E]                	mov si, titlemap_fg
+   717 000003B3 BF0038                  	mov di, MAP_FG
+   718 000003B6 B94002                  	mov cx, (32 * 18)
+   719 000003B9 F3A5                    	rep movsw
+   720                                  
+   721 000003BB C3                      	ret
+   722                                  
+   723                                  draw_lites:
+   724                                  	
+   725 000003BC B90500                  	mov cx, 5
+   726                                  draw_lites_y:
+   727                                  		
+   728 000003BF BA0500                  	mov dx, 5
+   729                                  draw_lites_x:
+   730                                  
+   731                                  	; get address of lite in di (lites + (((dx-1) + ((cx-1) * 5)))
+   732 000003C2 BF[0204]                	mov di, lites
+   733                                  	
+   734 000003C5 89D0                    	mov ax, dx
+   735 000003C7 48                      	dec ax
+   736 000003C8 01C7                    	add di, ax
+   737                                  	
+   738 000003CA 89CB                    	mov bx, cx
+   739 000003CC 4B                      	dec bx
+   740 000003CD 89D8                    	mov ax, bx
+   741 000003CF C1E002                  	shl ax, 2
+   742 000003D2 01D8                    	add ax, bx
+   743 000003D4 01C7                    	add di, ax
+   744                                  	
+   745                                  	; get state of lite at that address
+   746 000003D6 268A1D                  	mov bl, [es:di]
+   747                                  	; get start of tile data for this lite state
+   748 000003D9 C0E304                  	shl bl, 4
+   749 000003DC 80C350                  	add bl, 16 * 5
+   750                                  	
+   751                                  	; get x coordinate of lite tile (((dx-1) * 3) + 1)
+   752 000003DF 89D7                    	mov di, dx
+   753 000003E1 4F                      	dec di
+   754 000003E2 01D7                    	add di, dx
+   755 000003E4 01D7                    	add di, dx
+   756 000003E6 47                      	inc di
+   757                                  	
+   758                                  	; get y coordinate of lite tile ((((cx-1) * 3) + 1) * 32) 
+   759 000003E7 89CE                    	mov si, cx
+   760 000003E9 4E                      	dec si
+   761 000003EA 01CE                    	add si, cx
+   762 000003EC 01CE                    	add si, cx
+   763 000003EE 46                      	inc si
+   764 000003EF C1E605                  	shl si, 5
+   765                                  	
+   766                                  	; combine x and y coordinates and move pointer to start of tile
+   767 000003F2 01F7                    	add di, si
+   768 000003F4 83EF42                  	sub di, 2 + (32 * 2)
+   769                                  	
+   770                                  	; each tile is 2 bytes long
+   771 000003F7 D1E7                    	shl di, 1
+   772                                  	
+   773                                  	; get pointer into bg for this tile
+   774 000003F9 81C70030                	add di, MAP_BG 
+   775                                  	
+   776                                  	; copy tiles
+   777                                  	; top row
+   778 000003FD 26881D                  	mov [es:di], bl
+   779 00000400 83C702                  	add di, 2
+   780 00000403 FEC3                    	inc bl
+   781 00000405 26881D                  	mov [es:di], bl
+   782 00000408 83C702                  	add di, 2
+   783 0000040B FEC3                    	inc bl
+   784 0000040D 26881D                  	mov [es:di], bl
+   785                                  	
+   786                                  	; middle row
+   787 00000410 83C73C                  	add di, (32 - 2) * 2
+   788 00000413 FEC3                    	inc bl
+   789 00000415 26881D                  	mov [es:di], bl
+   790 00000418 83C702                  	add di, 2
+   791 0000041B FEC3                    	inc bl
+   792 0000041D 26881D                  	mov [es:di], bl
+   793 00000420 83C702                  	add di, 2
+   794 00000423 FEC3                    	inc bl
+   795 00000425 26881D                  	mov [es:di], bl
+   796                                  	
+   797                                  	; bottom row
+   798 00000428 83C73C                  	add di, (32 - 2) * 2
+   799 0000042B FEC3                    	inc bl
+   800 0000042D 26881D                  	mov [es:di], bl
+   801 00000430 83C702                  	add di, 2
+   802 00000433 FEC3                    	inc bl
+   803 00000435 26881D                  	mov [es:di], bl
+   804 00000438 83C702                  	add di, 2
+   805 0000043B FEC3                    	inc bl
+   806 0000043D 26881D                  	mov [es:di], bl
+   807                                  	
+   808 00000440 4A                      	dec dx
+   809 00000441 7403E97CFF              	jnz draw_lites_x
+   810                                  	
+   811 00000446 49                      	dec cx
+   812 00000447 7403E973FF              	jnz draw_lites_y
+   813                                  	
+   814 0000044C C3                      	ret
+   815                                  
+   816                                  	; flip lites
+   817                                  flip_lites:
+   818                                  
+   819                                  	; flip lite under cursor
+   820                                  	; calculate offset of currently highlighted lite
+   821 0000044D 268A1E[1E04]            	mov byte bl, [es:py]
+   822 00000452 88DF                    	mov bh, bl
+   823 00000454 C0E302                  	shl bl, 2
+   824 00000457 00FB                    	add bl, bh
+   825 00000459 268A3E[1D04]            	mov byte bh, [es:px]
+   826 0000045E 00FB                    	add bl, bh
+   827 00000460 B700                    	mov bh, 0
+   828                                  	
+   829                                  	; keep the offset for later
+   830 00000462 89DA                    	mov dx, bx
+   831                                  	
+   832                                  	; flip lite
+   833 00000464 BF[0204]                	mov di, lites
+   834 00000467 268A01                  	mov byte al, [es:bx+di]
+   835 0000046A F6D0                    	not al
+   836 0000046C 2401                    	and al, 0x1
+   837 0000046E 268801                  	mov byte [es:bx+di], al
+   838                                  
+   839                                  	; flip light to the left if we're not on the leftmost column
+   840                                  flip_lite_left:
+   841 00000471 26A0[1D04]              	mov byte al, [es:px]
+   842 00000475 3C00                    	cmp al, 0
+   843 00000477 740D                    	jz flip_lite_right
+   844                                  	
+   845 00000479 89D3                    	mov bx, dx
+   846 0000047B 4B                      	dec bx
+   847                                  	
+   848                                  	; flip lite
+   849 0000047C 268A01                  	mov byte al, [es:bx+di]
+   850 0000047F F6D0                    	not al
+   851 00000481 2401                    	and al, 0x1
+   852 00000483 268801                  	mov byte [es:bx+di], al
+   853                                  
+   854                                  	; flip light to the right if we're not on the rightmost column
+   855                                  flip_lite_right:	
+   856 00000486 26A0[1D04]              	mov byte al, [es:px]
+   857 0000048A 3C04                    	cmp al, 4
+   858 0000048C 740D                    	jz flip_lite_top
+   859                                  	
+   860 0000048E 89D3                    	mov bx, dx
+   861 00000490 43                      	inc bx
+   862                                  	
+   863                                  	; flip lite
+   864 00000491 268A01                  	mov byte al, [es:bx+di]
+   865 00000494 F6D0                    	not al
+   866 00000496 2401                    	and al, 0x1
+   867 00000498 268801                  	mov byte [es:bx+di], al
+   868                                  	
+   869                                  	; flip light to the top if we're not on the topmost column
+   870                                  flip_lite_top:	
+   871 0000049B 26A0[1E04]              	mov byte al, [es:py]
+   872 0000049F 3C00                    	cmp al, 0
+   873 000004A1 740F                    	jz flip_lite_bottom
+   874                                  	
+   875 000004A3 89D3                    	mov bx, dx
+   876 000004A5 83EB05                  	sub bx, 5
+   877                                  	
+   878                                  	; flip lite
+   879 000004A8 268A01                  	mov byte al, [es:bx+di]
+   880 000004AB F6D0                    	not al
+   881 000004AD 2401                    	and al, 0x1
+   882 000004AF 268801                  	mov byte [es:bx+di], al
+   883                                  	
+   884                                  	; flip light to the bottom if we're not on the bottommost column
+   885                                  flip_lite_bottom:	
+   886 000004B2 26A0[1E04]              	mov byte al, [es:py]
+   887 000004B6 3C04                    	cmp al, 4
+   888 000004B8 740F                    	jz flip_lite_done
+   889                                  	
+   890 000004BA 89D3                    	mov bx, dx
+   891 000004BC 83C305                  	add bx, 5
+   892                                  	
+   893                                  	; flip lite
+   894 000004BF 268A01                  	mov byte al, [es:bx+di]
+   895 000004C2 F6D0                    	not al
+   896 000004C4 2401                    	and al, 0x1
+   897 000004C6 268801                  	mov byte [es:bx+di], al
+   898                                  	
+   899                                  flip_lite_done:
+   900 000004C9 C3                      	ret
+   901                                  
+   902                                  draw_movecount:
+   903                                  
+   904                                  	; draw count
+   905                                  	; point di at 24,4 in tilemap
+   906 000004CA BF3031                  	mov di, MAP_BG + ((24 + (32 * 4)) * 2)
+   907                                  	
+   908 000004CD 268B1E[1B04]            	mov bx, [es:movecount]
+   909                                  
+   910                                  	; 1s digit
+   911 000004D2 88D8                    	mov al, bl
+   912 000004D4 240F                    	and al, 0xf
+   913 000004D6 0440                    	add al, NUMBER_TILES 
+   914 000004D8 268805                  	mov [es:di], al
+   915                                  	
+   916                                  	; 10s digit
+   917 000004DB 83EF02                  	sub di, 2
+   918 000004DE 88D8                    	mov al, bl
+   919 000004E0 C0E804                  	shr al, 4
+   920 000004E3 240F                    	and al, 0xf
+   921 000004E5 0440                    	add al, NUMBER_TILES 
+   922 000004E7 268805                  	mov [es:di], al
+   923                                  	
+   924                                  	; 100s digit
+   925 000004EA 83EF02                  	sub di, 2
+   926 000004ED 88F8                    	mov al, bh
+   927 000004EF 240F                    	and al, 0xf
+   928 000004F1 0440                    	add al, NUMBER_TILES 
+   929 000004F3 268805                  	mov [es:di], al
+   930                                  	
+   931                                  	; 1000s digit
+   932 000004F6 83EF02                  	sub di, 2
+   933 000004F9 88F8                    	mov al, bh
+   934 000004FB C0E804                  	shr al, 4
+   935 000004FE 240F                    	and al, 0xf
+   936 00000500 0440                    	add al, NUMBER_TILES 
+   937 00000502 268805                  	mov [es:di], al
+   938                                  
+   939 00000505 C3                      	ret
+   940                                  
+   941                                  draw_timer:
+   942                                  
+   943                                  	; draw count
+   944                                  	; point di at 24,2 in tilemap
+   945 00000506 BFB030                  	mov di, MAP_BG + ((24 + (32 * 2)) * 2)
+   946                                  	
+   947 00000509 268B1E[2804]            	mov bx, [es:timer]
+   948                                  
+   949                                  	; 1s digit
+   950 0000050E 88D8                    	mov al, bl
+   951 00000510 240F                    	and al, 0xf
+   952 00000512 0440                    	add al, NUMBER_TILES
+   953 00000514 268805                  	mov [es:di], al
+   954                                  	
+   955                                  	; 10s digit
+   956 00000517 83EF02                  	sub di, 2
+   957 0000051A 88D8                    	mov al, bl
+   958 0000051C C0E804                  	shr al, 4
+   959 0000051F 240F                    	and al, 0xf
+   960 00000521 0440                    	add al, NUMBER_TILES 
+   961 00000523 268805                  	mov [es:di], al
+   962                                  	
+   963                                  	; 100s digit
+   964 00000526 83EF04                  	sub di, 4
+   965 00000529 88F8                    	mov al, bh
+   966 0000052B 240F                    	and al, 0xf
+   967 0000052D 0440                    	add al, NUMBER_TILES 
+   968 0000052F 268805                  	mov [es:di], al
+   969                                  	
+   970                                  	; 10s digit
+   971 00000532 83EF02                  	sub di, 2
+   972 00000535 88F8                    	mov al, bh
+   973 00000537 C0E804                  	shr al, 4
+   974 0000053A 240F                    	and al, 0xf
+   975 0000053C 0440                    	add al, NUMBER_TILES 
+   976 0000053E 268805                  	mov [es:di], al
+   977                                  	
+   978 00000541 C3                      	ret
+   979                                  
+   980                                  ;
+   981                                  ; update cursor position
+   982                                  ;
+   983                                  update_cursor:
+   984                                  
+   985 00000542 BF022E                  	mov di, SPRITE_TABLE + 2
+   986 00000545 BE[6A07]                	mov si, cursor_offsets
+   987                                  	
+   988 00000548 268A26[1D04]            	mov ah, [es:px]
+   989 0000054D 26A0[1E04]              	mov al, [es:py]	
+   990                                  	
+   991                                  	; we want to do x = (px * 24) + 20 and y = (py * 24) + 16
+   992 00000551 C1E003                  	shl ax, 3
+   993 00000554 89C3                    	mov bx, ax
+   994 00000556 01D8                    	add ax, bx
+   995 00000558 01D8                    	add ax, bx
+   996 0000055A 051014                  	add ax, 0x1410
+   997                                  	
+   998                                  	; keep initial coords for later
+   999 0000055D 89C3                    	mov bx, ax
+  1000                                  
+  1001 0000055F B90400                  	mov cx, 4
+  1002                                  update_cursor_loop:
+  1003                                  	
+  1004 00000562 89D8                    	mov ax, bx
+  1005 00000564 2E0304                  	add ax, [cs:si]
+  1006 00000567 268905                  	mov [es:di], ax
+  1007                                  	
+  1008 0000056A 83C704                  	add di, 4
+  1009 0000056D 83C602                  	add si, 2
+  1010                                  	
+  1011 00000570 E0F0                    	loopnz update_cursor_loop
+  1012                                  
+  1013 00000572 C3                      	ret
+  1014                                  
+  1015                                  ;
+  1016                                  ; init avatar 
+  1017                                  init_avatar:
+  1018                                  	
+  1019                                  	; init blink state and timer
+  1020 00000573 B80100                  	mov ax, BLINK_OPEN
+  1021 00000576 26A3[2C04]              	mov [es:blink_state], ax
+  1022                                  	
+  1023 0000057A B8FA00                  	mov ax, 250
+  1024 0000057D 26A3[2E04]              	mov [es:blink_timer], ax
+  1025                                  
+  1026                                  	; init sprites
+  1027 00000581 BF102E                  	mov di, SPRITE_TABLE + (4 * 4)
+  1028 00000584 BE[7207]                	mov si, avatar_lite_offsets
+  1029 00000587 B91900                  	mov cx, 25
+  1030                                  init_avatar_lites_loop:
+  1031                                  	; point at dark lite mini sprite
+  1032 0000058A 26C7050600              	mov word [es:di], 0x0006
+  1033 0000058F 2E8B1C                  	mov word bx, [cs:si]
+  1034 00000592 88F8                    	mov al, bh
+  1035 00000594 88DC                    	mov ah, bl
+  1036 00000596 26894502                	mov word [es:di+2], ax
+  1037                                  	
+  1038 0000059A 83C602                  	add si, 2
+  1039 0000059D 83C704                  	add di, 4
+  1040 000005A0 E0E8                    	loopnz init_avatar_lites_loop
+  1041                                  	
+  1042                                  	; eyes
+  1043 000005A2 BF742E                  	mov di, SPRITE_TABLE + (4 * 4) + (25 * 4)
+  1044                                  	
+  1045                                  	; left left
+  1046 000005A5 B85CAD                  	mov ax, (173 << 8) | (92)
+  1047 000005A8 BB0800                  	mov bx, 0x0008
+  1048 000005AB 26891D                  	mov [es:di], bx
+  1049 000005AE 26894502                	mov [es:di + 2], ax	
+  1050                                  	
+  1051                                  	; left right
+  1052 000005B2 83C704                  	add di, 4
+  1053 000005B5 B85CB5                  	mov ax, (181 << 8) | (92)
+  1054 000005B8 BB0900                  	mov bx, 0x0009
+  1055 000005BB 26891D                  	mov [es:di], bx
+  1056 000005BE 26894502                	mov [es:di + 2], ax	
+  1057                                  	
+  1058                                  	; right left
+  1059 000005C2 83C704                  	add di, 4
+  1060 000005C5 B860B9                  	mov ax, (185 << 8) | (96)
+  1061 000005C8 BB0800                  	mov bx, 0x0008
+  1062 000005CB 26891D                  	mov [es:di], bx
+  1063 000005CE 26894502                	mov [es:di + 2], ax	
+  1064                                  	
+  1065                                  	; right right
+  1066 000005D2 83C704                  	add di, 4
+  1067 000005D5 B860C1                  	mov ax, (193 << 8) | (96)
+  1068 000005D8 BB0900                  	mov bx, 0x0009
+  1069 000005DB 26891D                  	mov [es:di], bx
+  1070 000005DE 26894502                	mov [es:di + 2], ax	
+  1071                                  	
+  1072 000005E2 C3                      	ret
+  1073                                  
+  1074                                  ;
+  1075                                  ; update avatar sprite lights
+  1076                                  ;
+  1077                                  update_avatar_lites:
+  1078                                  	
+  1079 000005E3 BF102E                  	mov di, SPRITE_TABLE + (4 * 4)
+  1080 000005E6 BE[0204]                	mov si, lites
+  1081 000005E9 B91900                  	mov cx, 25
+  1082                                  	
+  1083                                  update_avatar_lites_loop:
+  1084 000005EC 268A04                  	mov byte al, [es:si]
+  1085 000005EF 0406                    	add al, 6
+  1086 000005F1 268805                  	mov [es:di], al
+  1087                                  	
+  1088 000005F4 83C704                  	add di, 4
+  1089 000005F7 46                      	inc si
+  1090                                  
+  1091 000005F8 E0F2                    	loopnz update_avatar_lites_loop
+  1092                                  
+  1093 000005FA C3                      	ret
+  1094                                  
+  1095                                  
+  1096                                  update_avatar_blink:
+  1097                                  
+  1098                                  	; decrease blink timer
+  1099 000005FB 26FF0E[2E04]            	dec word [es:blink_timer]
+  1100 00000600 7553                    	jnz update_avatar_blink_done
+  1101                                  	
+  1102                                  	; timer hits 0, update
+  1103 00000602 26A1[2C04]              	mov ax, [es:blink_state]
+  1104                                  
+  1105                                  	; eyes are closed
+  1106 00000606 83F802                  	cmp ax, BLINK_CLOSED
+  1107 00000609 7516                    	jnz update_avatar_blink_open_check
+  1108                                  	
+  1109 0000060B E8DF00                  	call rnd
+  1110 0000060E 25FF00                  	and ax, 0xff
+  1111 00000611 05FA00                  	add ax, 250
+  1112 00000614 26A3[2E04]              	mov [es:blink_timer], ax
+  1113                                  	
+  1114 00000618 B80100                  	mov ax, BLINK_OPEN
+  1115 0000061B 26A3[2C04]              	mov [es:blink_state], ax
+  1116                                  	
+  1117 0000061F EB15                    	jmp update_avatar_blink_update_sprite
+  1118                                  	
+  1119                                  update_avatar_blink_open_check:
+  1120                                  
+  1121                                  	;eyes are open
+  1122 00000621 83F801                  	cmp ax, BLINK_OPEN
+  1123 00000624 752F                    	jnz update_avatar_blink_done
+  1124                                  
+  1125 00000626 B80F00                  	mov ax, 15
+  1126 00000629 26A3[2E04]              	mov [es:blink_timer], ax
+  1127                                  	
+  1128 0000062D B80200                  	mov ax, BLINK_CLOSED
+  1129 00000630 26A3[2C04]              	mov [es:blink_state], ax
+  1130                                  	
+  1131 00000634 EB00                    	jmp update_avatar_blink_update_sprite
+  1132                                  
+  1133                                  update_avatar_blink_update_sprite:
+  1134                                  
+  1135                                  	; eyes
+  1136 00000636 BF742E                  	mov di, SPRITE_TABLE + (4 * 4) + (25 * 4)
+  1137 00000639 26A1[2C04]              	mov ax, [es:blink_state]
+  1138 0000063D 48                      	dec ax
+  1139 0000063E D1E0                    	shl ax, 1
+  1140 00000640 83C008                  	add ax, 8
+  1141                                  	
+  1142 00000643 268905                  	mov [es:di], ax
+  1143 00000646 40                      	inc ax
+  1144 00000647 26894504                	mov [es:di+4], ax	
+  1145 0000064B 48                      	dec ax
+  1146 0000064C 26894508                	mov [es:di+8], ax
+  1147 00000650 40                      	inc ax
+  1148 00000651 2689450C                	mov [es:di+12], ax
+  1149                                  
+  1150                                  update_avatar_blink_done:
+  1151 00000655 C3                      	ret
+  1152                                  
+  1153                                  
+  1154                                  ;
+  1155                                  ; check whether the game has been won
+  1156                                  ;
+  1157                                  check_win:
+  1158                                  
+  1159 00000656 BF[0204]                	mov di, lites
+  1160 00000659 B80000                  	mov ax, 0
+  1161 0000065C B91900                  	mov cx, 25
+  1162                                  	
+  1163                                  	; add up all values of lights
+  1164                                  check_win_loop:
+  1165 0000065F 260205                  	add al, [es:di]
+  1166 00000662 47                      	inc di
+  1167 00000663 49                      	dec cx
+  1168 00000664 75F9                    	jnz check_win_loop
+  1169                                  	
+  1170                                  	; check whether the sum of all the lights is 0
+  1171 00000666 20C0                    	and al, al
+  1172 00000668 751C                    	jnz check_win_not_won
+  1173                                  	
+  1174                                  	; if it is 0, we've won
+  1175 0000066A B80100                  	mov ax, STATE_WON
+  1176 0000066D 26A3[2A04]              	mov [es:state], ax
+  1177                                  
+  1178                                  	; copy win screen tiles to fg map
+  1179 00000671 BE[B362]                	mov si, winmap
+  1180 00000674 BF0038                  	mov di, MAP_FG
+  1181 00000677 B94002                  	mov cx, (32 * 18)
+  1182 0000067A F3A5                    	rep movsw
+  1183                                  	
+  1184                                  	; show foreground
+  1185 0000067C B007                    	mov al, BG_ON | FG_ON | SPR_ON
+  1186 0000067E E600                    	out IO_DISPLAY_CTRL, al
+  1187                                  	
+  1188 00000680 B8[D407]                	mov ax, winsong
+  1189 00000683 E8AD60                  	call music_init
+  1190                                  	
+  1191                                  check_win_not_won:
+  1192                                  
+  1193 00000686 C3                      	ret
+  1194                                  
+  1195                                  ;
+  1196                                  ; update game timer
+  1197                                  ; timer stored as a word of 4 bcd numbers
+  1198                                  ;
+  1199                                  update_timer:
+  1200                                  
+  1201                                  	; update timer tic counter
+  1202 00000687 26FE06[2704]            	inc byte [es:timertics]
+  1203 0000068C 26A0[2704]              	mov al, [es:timertics]
+  1204                                  	
+  1205                                  	; check if a second has elapsed
+  1206 00000690 3C4B                    	cmp al, 75
+  1207 00000692 7524                    	jnz update_timer_done
+  1208                                  	
+  1209                                  	; reset timer
+  1210 00000694 B000                    	mov al, 0
+  1211 00000696 26A2[2704]              	mov [es:timertics], al
+  1212                                  	
+  1213                                  	; get timer
+  1214 0000069A 268B1E[2804]            	mov bx, [es:timer]
+  1215                                  	
+  1216                                  	; increment seconds
+  1217 0000069F 88D8                    	mov al, bl
+  1218 000006A1 FEC0                    	inc al
+  1219 000006A3 27                      	daa	
+  1220 000006A4 88C3                    	mov bl, al
+  1221                                  	
+  1222                                  	; check if a minute has elapsed
+  1223 000006A6 3C60                    	cmp al, 0x60
+  1224 000006A8 7509                    	jnz update_timer_minute_not_elapsed
+  1225                                  	
+  1226                                  	; increment minutes
+  1227 000006AA B300                    	mov bl, 0
+  1228 000006AC 88F8                    	mov al, bh
+  1229 000006AE FEC0                    	inc al
+  1230 000006B0 27                      	daa
+  1231 000006B1 88C7                    	mov bh, al
+  1232                                  		
+  1233                                  update_timer_minute_not_elapsed:
+  1234                                  
+  1235                                  	;update value in memory
+  1236 000006B3 26891E[2804]            	mov [es:timer], bx
+  1237                                  	
+  1238                                  update_timer_done:
+  1239                                  
+  1240 000006B8 C3                      	ret
+  1241                                  
+  1242                                  ; check solvability
+  1243                                  ; checks the "quiet patterns" of the board to see whether then
+  1244                                  ; total of lites lit within those patterns is odd (unsolvable) or even (solvable)
+  1245                                  ; http://www.cs.cmu.edu/~tcortina/15110m14/pa11/index.html
+  1246                                  check_solvability:
+  1247                                  
+  1248                                  check_solvability_qp1:
+  1249                                  
+  1250 000006B9 BF[0204]                	mov di, lites
+  1251 000006BC BE[A407]                	mov si, qp1_offsets
+  1252 000006BF B80000                  	mov ax, 0
+  1253 000006C2 B90C00                  	mov cx, 12
+  1254                                  	
+  1255                                  check_solvability_qp1_loop:
+  1256                                  
+  1257                                  	; get offset of lite to check
+  1258 000006C5 2E8B1C                  	mov bx, [cs:si]
+  1259                                  	
+  1260                                  	; add lite status at offset to al
+  1261 000006C8 260201                  	add byte al, [es:di+bx]
+  1262                                  	
+  1263 000006CB 83C602                  	add si, 2
+  1264 000006CE E0F5                    	loopnz check_solvability_qp1_loop
+  1265                                  	
+  1266                                  	; check whether the number is odd
+  1267                                  	; if it's not, check qp2
+  1268                                  	; if it's odd, return with 1 in ax to indicate it's odd
+  1269 000006D0 83E001                  	and ax, 1
+  1270 000006D3 7517                    	jnz check_solvability_done
+  1271                                  	
+  1272                                  check_solvability_qp2:
+  1273                                  	
+  1274                                  	; check qp1 
+  1275 000006D5 BE[BC07]                	mov si, qp2_offsets
+  1276 000006D8 B80000                  	mov ax, 0
+  1277 000006DB B90C00                  	mov cx, 12
+  1278                                  	
+  1279                                  check_solvability_qp2_loop:
+  1280                                  
+  1281                                  	; get offset of lite to check
+  1282 000006DE 2E8B1C                  	mov bx, [cs:si]
+  1283                                  	
+  1284                                  	; add lite status at offset to al
+  1285 000006E1 260201                  	add byte al, [es:di+bx]
+  1286                                  	
+  1287 000006E4 83C602                  	add si, 2
+  1288 000006E7 E0F5                    	loopnz check_solvability_qp2_loop
+  1289                                  	
+  1290                                  	; check whether the number is odd
+  1291 000006E9 83E001                  	and ax, 1
+  1292                                  
+  1293                                  check_solvability_done:
+  1294                                  
+  1295                                  	; if it is, return with 1 in ax to indicate it's odd
+  1296 000006EC C3                      	ret
+  1297                                  
+  1298                                  ;
+  1299                                  ; put a random value in ax
+  1300                                  ;
+  1301                                  rnd:
+  1302 000006ED 53                      	push bx
+  1303                                  	
+  1304 000006EE 26A1[3004]              	mov word ax, [es:rnd_val]
+  1305                                  	
+  1306                                  	; rnd_val ^= rnd_val << 7;
+  1307 000006F2 89C3                    	mov bx, ax
+  1308 000006F4 C1E307                  	shl bx, 7
+  1309 000006F7 31D8                    	xor ax, bx
+  1310                                      
+  1311                                  	; rnd_val ^= rnd_val >> 9;
+  1312 000006F9 89C3                    	mov bx, ax
+  1313 000006FB C1EB09                  	shr bx, 9
+  1314 000006FE 31D8                    	xor ax, bx
+  1315                                  	
+  1316                                      ; rnd_val ^= rnd_val << 8;
+  1317 00000700 89C3                    	mov bx, ax
+  1318 00000702 C1E308                  	shl bx, 8
+  1319 00000705 31D8                    	xor ax, bx
+  1320                                  	
+  1321                                  	; update rnd val in memory
+  1322 00000707 26A3[3004]              	mov word [es:rnd_val], ax
+  1323                                  	
+  1324 0000070B 5B                      	pop bx
+  1325                                  
+  1326 0000070C C3                          ret
+  1327                                  
+  1328                                  ; put 32 bit random value in memory at rnd_val_low and rnd_val_high
+  1329                                  ; returns low word in ax, high word in dx
+  1330                                  rnd32:
+  1331 0000070D 53                      	push bx
+  1332 0000070E 51                      	push cx
+  1333                                  	
+  1334                                  	; x = x ^ (x << 13)
+  1335 0000070F 26A1[3004]              	mov ax, [es:rnd_val_low]
+  1336                                  	
+  1337                                  	; low word shifted by 13 in cx
+  1338                                  	; (actually just clearing the bits we don't care about and rotating by 3)
+  1339 00000713 89C1                    	mov cx, ax
+  1340 00000715 83E107                  	and cx, 0b111
+  1341 00000718 C1C903                  	ror cx, 3
+  1342                                  	; xor by the original value
+  1343                                  	; calculated lower word is now in cx
+  1344 0000071B 31C1                    	xor cx, ax
+  1345                                  
+  1346                                  	; get upper word and shift it left by 13
+  1347 0000071D 268B1E[3204]            	mov bx, [es:rnd_val_high]
+  1348 00000722 89DA                    	mov dx, bx
+  1349 00000724 83E207                  	and dx, 0b111
+  1350 00000727 C1CA03                  	ror dx, 3
+  1351                                  	; get the shifted msb from the original lower word and combine them with the upper word
+  1352 0000072A C1E803                  	shr ax, 3
+  1353 0000072D 09C2                    	or dx, ax
+  1354                                  	; xor the upper word by the shifted version and put in dx
+  1355 0000072F 31DA                    	xor dx, bx
+  1356                                  	
+  1357                                  	; low word now in cx, high word now in dx
+  1358                                  	
+  1359                                  	; x = x ^ (x >> 17)
+  1360                                  	; upper word gets shifted away so we can just xor with 0
+  1361 00000731 89D3                    	mov bx, dx
+  1362 00000733 83F300                  	xor bx, 0
+  1363                                  	
+  1364                                  	; lower word gets xor'ed with the upper word shifted right by 1
+  1365 00000736 D1EA                    	shr dx, 1
+  1366 00000738 89C8                    	mov ax, cx
+  1367 0000073A 31D0                    	xor ax, dx
+  1368                                  	
+  1369                                  	; low word now in ax, high word now in bx
+  1370                                  	
+  1371                                  	; x = x ^ (x << 5)
+  1372                                  	; shift and xor low word
+  1373 0000073C 89C1                    	mov cx, ax
+  1374 0000073E C1E105                  	shl cx, 5
+  1375 00000741 31C1                    	xor cx, ax
+  1376                                  	
+  1377                                  	; isolate 5 msb in original low word
+  1378 00000743 C1C005                  	rol ax, 5
+  1379 00000746 83E01F                  	and ax, 0b11111
+  1380                                  	; combine with shifted upper word
+  1381 00000749 89DA                    	mov dx, bx
+  1382 0000074B C1E205                  	shl dx, 5
+  1383 0000074E 09C2                    	or dx, ax
+  1384                                  	; xor with original upper word
+  1385 00000750 31DA                    	xor dx, bx
+  1386                                  	
+  1387                                  	; store new values in memory
+  1388 00000752 89C8                    	mov ax, cx
+  1389 00000754 26890E[3004]            	mov [es:rnd_val_low], cx
+  1390 00000759 268916[3204]            	mov [es:rnd_val_high], dx
+  1391                                  	
+  1392 0000075E 59                      	pop cx
+  1393 0000075F 5B                      	pop bx
+  1394                                  	
+  1395 00000760 C3                      	ret
+  1396                                  
+  1397                                  ;
+  1398                                  ; Graphics data
+  1399                                  ;
+  1400 00000761 90                      	align 2
+  1401                                  
+  1402                                  	main_loop_jump_table:
+  1403 00000762 [4801]                  	dw main_loop_game
+  1404 00000764 [0502]                  	dw main_loop_won
+  1405 00000766 [3802]                  	dw main_loop_title
+  1406                                  
+  1407                                  	rnd_lites_divisor:
+  1408 00000768 1900                    	dw 25
+  1409                                  
+  1410                                  	cursor_offsets:
+  1411 0000076A 0000000808000808        	dw 0x0000, 0x0800, 0x0008, 0x0808
+  1412                                  	
+  1413                                  	avatar_lite_offsets:
+  1414 00000772 A0859D839A81977F94-     	db 160, 133,	157, 131,	154, 129,	151, 127,	148, 125
+  1414 0000077B 7D                 
+  1415 0000077C A383A0819D7F9A7D97-     	db 163, 131,	160, 129,	157, 127,	154, 125,	151, 123
+  1415 00000785 7B                 
+  1416 00000786 A681A37FA07D9D7B9A-     	db 166, 129,	163, 127,	160, 125,	157, 123,	154, 121
+  1416 0000078F 79                 
+  1417 00000790 A97FA67DA37BA0799D-     	db 169, 127,	166, 125,	163, 123,	160, 121,	157, 119
+  1417 00000799 77                 
+  1418 0000079A AC7DA97BA679A377A0-     	db 172, 125,	169, 123,	166, 121,	163, 119,	160, 117
+  1418 000007A3 75                 
+  1419                                  	
+  1420                                  	qp1_offsets:
+  1421 000007A4 000002000400            		dw 0, 2, 4
+  1422 000007AA 050007000900            		dw 5, 7, 9
+  1423 000007B0 0F0011001300            		dw 15, 17, 19
+  1424 000007B6 140016001800            		dw 20, 22, 24
+  1425                                  		
+  1426                                  	qp2_offsets:
+  1427 000007BC 0000010003000400        		dw  0,  1,  3,  4
+  1428 000007C4 0A000B000D000E00        		dw 10, 11, 13, 14
+  1429 000007CC 1400150017001800        		dw 20, 21, 23, 24
+  1430                                  	
+  1431                                  	winsong:
+  1432 000007D4 <bin 3B8h>              	incbin "winsong.song"
+  1433                                  	
+  1434                                  	music_test:
+  1435 00000B8C <bin 20Dh>              	incbin "song1.song"
+  1436                                  	
+  1437                                  	song2:
+  1438 00000D99 <bin 3BAh>              	incbin "song2.song"
+  1439                                  	
+  1440                                  	tile_palette:
+  1441 00001153 <bin 20h>               	incbin "tiles.palette"
+  1442                                  	
+  1443                                  	sprite_palette:
+  1444 00001173 <bin 20h>               	incbin "sprites.palette"
+  1445                                  	
+  1446                                  	tiles:
+  1447 00001193 <bin 2000h>             	incbin "tiles.raw"
+  1448                                  	
+  1449                                  	title_palette:
+  1450 00003193 <bin 20h>               	incbin "title_scroller.palette"
+  1451                                  	
+  1452                                  	title_tiles:
+  1453 000031B3 <bin 200h>              	incbin "title_scroller.raw"
+  1454 000033B3 <bin 1E00h>             	incbin "title.raw"
+  1455                                  	
+  1456                                  	litemap:
+  1457 000051B3 <bin 480h>              	incbin "litemap.bin"
+  1458                                  	
+  1459                                  	titlemap_bg:
+  1460 00005633 <bin 800h>              	incbin "titlemap_bg.bin"
+  1461                                  	
+  1462                                  	titlemap_fg:
+  1463 00005E33 <bin 480h>              	incbin "titlemap_fg.bin"
+  1464                                  	
+  1465                                  	winmap:
+  1466 000062B3 <bin 480h>              	incbin "winmap.bin"
+  1467                                  	
+  1468                                  	%include "music_code.asm"
+     1                              <1> 	
+     2                              <1> MUSIC_DATA_WAIT equ 0x0 << 2
+     3                              <1> MUSIC_DATA_NOTEON equ 0x1 << 2
+     4                              <1> MUSIC_DATA_NOTEOFF equ 0x2 << 2
+     5                              <1> MUSIC_DATA_RESTART equ 0x3 << 2
+     6                              <1> MUSIC_DATA_VOLUME equ 0x4 << 2
+     7                              <1> MUSIC_DATA_INSTRUMENT equ 0x5 << 2
+     8                              <1> MUSIC_DATA_ENVELOPE equ 0x6 << 2
+     9                              <1> MUSIC_DATA_NOISE equ 0x7 << 2
+    10                              <1> 
+    11                              <1> ; ax - address of music data
+    12                              <1> music_init:
+    13                              <1> 
+    14                              <1> 	; point at music data
+    15 00006733 26A3[8004]          <1> 	mov [es:music_data], ax
+    16                              <1> 	
+    17 00006737 89C7                <1> 	mov di, ax
+    18                              <1> 	
+    19                              <1> 	; get pointer to instructions
+    20                              <1> 	; by doing music_data + offset specified in music header
+    21 00006739 3E8B1D              <1> 	mov bx, [ds:di]
+    22 0000673C 8D01                <1> 	lea ax, [di+bx]
+    23 0000673E 26A3[8204]          <1> 	mov [es:music_ptr], ax
+    24 00006742 26A3[8404]          <1> 	mov [es:music_instructions], ax
+    25                              <1> 	
+    26                              <1> 	; get pointer to instruments
+    27                              <1> 	; by doing music_data + offset specified in music header
+    28 00006746 3E8B5D02            <1> 	mov bx, [ds:di+2]
+    29 0000674A 8D01                <1> 	lea ax, [di+bx]
+    30 0000674C 26A3[8604]          <1> 	mov [es:music_instruments], ax	
+    31                              <1> 	
+    32                              <1> 	; init tics to 0
+    33 00006750 B80000              <1> 	mov ax, 0
+    34 00006753 26A3[8A04]          <1> 	mov [es:music_tic], ax
+    35                              <1> 	
+    36 00006757 BA9000              <1> 	mov dx, IO_AUDIO_CTRL
+    37 0000675A B00F                <1> 	mov al, AUDIO_1_ON | AUDIO_2_ON | AUDIO_3_ON | AUDIO_4_ON
+    38 0000675C EE                  <1> 	out dx, al
+    39                              <1> 	
+    40                              <1> 	; set audio output
+    41 0000675D BA9100              <1> 	mov dx, IO_AUDIO_OUTPUT
+    42 00006760 B00F                <1> 	mov al, AUDIO_OUT_MONO | AUDIO_OUT_STEREO | 0b0110
+    43 00006762 EE                  <1> 	out dx, al
+    44                              <1> 	
+    45                              <1> 	; set default channel volumes
+    46 00006763 B0FF                <1> 	mov al, 0xff
+    47 00006765 BF[9004]            <1> 	mov di, music_vols
+    48 00006768 268805              <1> 	mov [es:di], al
+    49 0000676B 26884501            <1> 	mov [es:di+1], al
+    50 0000676F 26884502            <1> 	mov [es:di+2], al
+    51 00006773 26884503            <1> 	mov [es:di+3], al
+    52                              <1> 	
+    53                              <1> 	; set channel volume
+    54 00006777 B000                <1> 	mov al, 0x00
+    55 00006779 BA8800              <1> 	mov dx, IO_AUDIO1_VOL
+    56 0000677C EE                  <1> 	out dx, al
+    57 0000677D BA8900              <1> 	mov dx, IO_AUDIO2_VOL
+    58 00006780 EE                  <1> 	out dx, al
+    59 00006781 BA8A00              <1> 	mov dx, IO_AUDIO3_VOL
+    60 00006784 EE                  <1> 	out dx, al
+    61 00006785 BA8B00              <1> 	mov dx, IO_AUDIO4_VOL
+    62 00006788 EE                  <1> 	out dx, al
+    63                              <1> 	
+    64                              <1> 	; clear envelope pointers
+    65 00006789 B80000              <1> 	mov ax, 0
+    66 0000678C B91000              <1> 	mov cx, (music_env_size * 4) / 2
+    67 0000678F F3AB                <1> 	rep stosw
+    68                              <1> 	
+    69                              <1> 	; set waiting
+    70 00006791 B80000              <1> 	mov ax, 0
+    71 00006794 26A3[8E04]          <1> 	mov [es:music_wait_tic], ax
+    72 00006798 26A3[8C04]          <1> 	mov [es:music_waiting], ax
+    73                              <1> 	
+    74 0000679C C3                  <1> 	ret
+    75                              <1> 	
+    76                              <1> music_update:
+    77                              <1> 	
+    78                              <1> 	; point di to next instruction
+    79 0000679D 268B3E[8204]        <1> 	mov di, [es:music_ptr]
+    80                              <1> 	
+    81                              <1> 	; see if we're waiting for a tic
+    82 000067A2 26A1[8C04]          <1> 	mov ax, [es:music_waiting]
+    83 000067A6 21C0                <1> 	and ax, ax
+    84                              <1> 	
+    85                              <1> 	; we aren't
+    86 000067A8 7417                <1> 	jz music_update_loop
+    87                              <1> 
+    88                              <1> 	; we are waiting for a tic
+    89 000067AA 26A1[8E04]          <1> 	mov ax, [es:music_wait_tic]
+    90 000067AE 268B1E[8A04]        <1> 	mov bx, [es:music_tic]
+    91                              <1> 	
+    92                              <1> 	; not reached the tic yet
+    93 000067B3 31D8                <1> 	xor ax, bx
+    94 000067B5 7403E92601          <1> 	jnz music_update_done
+    95                              <1> 	
+    96                              <1> 	; reached the target tic
+    97 000067BA B80000              <1> 	mov ax, 0
+    98 000067BD 26A3[8C04]          <1> 	mov [es:music_waiting], ax
+    99                              <1> 	
+   100                              <1> music_update_loop:
+   101                              <1> 
+   102                              <1> 	; get next instruction
+   103 000067C1 3E8A05              <1> 	mov byte al, [ds:di]
+   104                              <1> 	
+   105                              <1> 	; jump to address in jump table for this instruction
+   106 000067C4 B700                <1> 	mov bh, 0
+   107 000067C6 88C3                <1> 	mov bl, al
+   108 000067C8 80E3FC              <1> 	and bl, 0xfc
+   109 000067CB D0EB                <1> 	shr bl, 1
+   110 000067CD 81C3[6469]          <1> 	add bx, music_event_jump_table
+   111 000067D1 3EFF27              <1> 	jmp [ds:bx]
+   112                              <1> 	
+   113                              <1> music_event_wait:
+   114                              <1> 
+   115                              <1> 	; get tic to wait for
+   116 000067D4 47                  <1> 	inc di
+   117 000067D5 3E8B05              <1> 	mov word ax, [ds:di]
+   118 000067D8 26A3[8E04]          <1> 	mov [es:music_wait_tic], ax
+   119 000067DC 83C702              <1> 	add di, 2
+   120                              <1> 	
+   121                              <1> 	; check if we're at the tic it's waiting for already
+   122 000067DF 268B1E[8A04]        <1> 	mov bx, [es:music_tic]
+   123 000067E4 39D8                <1> 	cmp ax, bx
+   124 000067E6 74D9                <1> 	jz music_update_loop
+   125                              <1> 	
+   126                              <1> 	; set waiting flag
+   127 000067E8 B80100              <1> 	mov ax, 1
+   128 000067EB 26A3[8C04]          <1> 	mov [es:music_waiting], ax
+   129                              <1> 	
+   130                              <1> 	; point to next event after the wait
+   131 000067EF E9EE00              <1> 	jmp music_update_done
+   132                              <1> 	
+   133                              <1> music_event_note_on:
+   134                              <1> 	
+   135                              <1> 	; put channel number in bl
+   136 000067F2 88C3                <1> 	mov bl, al
+   137 000067F4 80E303              <1> 	and bl, 0x3
+   138 000067F7 B700                <1> 	mov bh, 0
+   139                              <1> 	
+   140                              <1> 	; get channel volume from wram
+   141 000067F9 BE[9004]            <1> 	mov si, music_vols	
+   142 000067FC 268A00              <1> 	mov byte al, [es:si+bx]
+   143                              <1> 	
+   144                              <1> 	; set channel volume
+   145 000067FF BA8800              <1> 	mov dx, IO_AUDIO1_VOL
+   146 00006802 01DA                <1> 	add dx, bx
+   147 00006804 EE                  <1> 	out dx, al
+   148                              <1> 	
+   149                              <1> 	; point at frequency
+   150 00006805 47                  <1> 	inc di
+   151                              <1> 
+   152                              <1> 	; set channel frequency
+   153 00006806 BA8000              <1> 	mov dx, IOw_AUDIO1_FREQ
+   154 00006809 00DA                <1> 	add dl, bl
+   155 0000680B 00DA                <1> 	add dl, bl
+   156 0000680D 3E8B05              <1> 	mov ax, [ds:di]
+   157 00006810 EF                  <1> 	out dx, ax
+   158                              <1> 	
+   159                              <1> music_event_note_on_envelope:
+   160                              <1> 
+   161                              <1> 	; restart envelope
+   162                              <1> 	; get envelope address ( * 8)
+   163 00006811 89D8                <1> 	mov ax, bx
+   164 00006813 C1E303              <1> 	shl bx, 3
+   165 00006816 81C3[9404]          <1> 	add bx, music_envelopes
+   166                              <1> 	
+   167                              <1> 	; point envelope pointer to start of envelope data
+   168 0000681A 268B07              <1> 	mov ax, [es:bx + music_env.start]
+   169 0000681D 26894702            <1> 	mov [es:bx + music_env.ptr], ax
+   170                              <1> 	
+   171 00006821 83C702              <1> 	add di, 2
+   172 00006824 EB9B                <1> 	jmp music_update_loop
+   173                              <1> 	
+   174                              <1> music_event_note_off:
+   175                              <1> 	
+   176                              <1> 	; put channel number in bl
+   177 00006826 88C3                <1> 	mov bl, al
+   178 00006828 80E303              <1> 	and bl, 0x3
+   179                              <1> 	
+   180                              <1> 	; set channel volume
+   181 0000682B BA8800              <1> 	mov dx, IO_AUDIO1_VOL
+   182 0000682E 00DA                <1> 	add dl, bl
+   183 00006830 B000                <1> 	mov al, 0x00
+   184 00006832 EE                  <1> 	out dx, al
+   185                              <1> 	
+   186 00006833 47                  <1> 	inc di
+   187 00006834 EB8B                <1> 	jmp music_update_loop
+   188                              <1> 
+   189                              <1> music_event_restart:
+   190                              <1> 	
+   191                              <1> 	; loop song
+   192 00006836 B8FFFF              <1> 	mov ax, 0xffff
+   193 00006839 26A3[8A04]          <1> 	mov [es:music_tic], ax
+   194                              <1> 	
+   195 0000683D 268B3E[8404]        <1> 	mov di, [es:music_instructions]
+   196                              <1> 	
+   197 00006842 E97CFF              <1> 	jmp music_update_loop
+   198                              <1> 
+   199                              <1> music_event_volume:
+   200                              <1> 
+   201                              <1> 	; get new volume level and point at next instruction
+   202 00006845 47                  <1> 	inc di
+   203 00006846 3E8A0D              <1> 	mov byte cl, [ds:di]
+   204 00006849 47                  <1> 	inc di
+   205                              <1> 	
+   206                              <1> 	; put channel number in bl
+   207 0000684A 88C3                <1> 	mov bl, al
+   208 0000684C 80E303              <1> 	and bl, 0x3
+   209                              <1> 	
+   210                              <1> 	; update channel volume in wram
+   211 0000684F BE[9004]            <1> 	mov si, music_vols
+   212 00006852 B700                <1> 	mov bh, 0
+   213 00006854 268808              <1> 	mov byte [es:si+bx], cl
+   214                              <1> 	
+   215 00006857 E967FF              <1> 	jmp music_update_loop
+   216                              <1> 	
+   217                              <1> music_event_instrument:
+   218                              <1> 	
+   219                              <1> 	; get new instrument and point at next instruction
+   220 0000685A 47                  <1> 	inc di
+   221 0000685B 3E8A0D              <1> 	mov byte cl, [ds:di]	
+   222 0000685E 47                  <1> 	inc di
+   223                              <1> 	
+   224                              <1> 	; point si at the start of the instrument data
+   225 0000685F 268B36[8604]        <1> 	mov si, [es:music_instruments]
+   226                              <1> 	
+   227                              <1> 	; get the offset of the instrument data (* 16) and add it to si
+   228 00006864 B500                <1> 	mov ch, 0
+   229 00006866 C1E104              <1> 	shl cx, 4
+   230 00006869 01CE                <1> 	add si, cx
+   231                              <1> 	
+   232 0000686B 57                  <1> 	push di
+   233                              <1> 	
+   234                              <1> 	; point di at waveform destination
+   235 0000686C BF[4004]            <1> 	mov di, pcm_waveforms
+   236 0000686F B400                <1> 	mov ah, 0
+   237 00006871 2403                <1> 	and al, 0x3
+   238 00006873 C0E004              <1> 	shl al, 4
+   239 00006876 01C7                <1> 	add di, ax
+   240                              <1> 	
+   241                              <1> 	; copy instrument data
+   242 00006878 B90800              <1> 	mov cx, 8
+   243 0000687B F3A5                <1> 	rep movsw	
+   244                              <1> 	
+   245 0000687D 5F                  <1> 	pop di
+   246                              <1> 	
+   247 0000687E E940FF              <1> 	jmp music_update_loop
+   248                              <1> 
+   249                              <1> music_event_envelope:
+   250                              <1> 
+   251                              <1> 	; put channel number in bl
+   252 00006881 88C3                <1> 	mov bl, al
+   253 00006883 80E303              <1> 	and bl, 0x3
+   254                              <1> 	; turn into offset for envelope data in ram (* 8)
+   255 00006886 C0E303              <1> 	shl bl, 3
+   256 00006889 B700                <1> 	mov bh, 0
+   257 0000688B BE[9404]            <1> 	mov si, music_envelopes
+   258                              <1> 	; si now points at music envelope data for this channel
+   259 0000688E 01DE                <1> 	add si, bx
+   260                              <1> 
+   261                              <1> 	; di now points at envelope number
+   262 00006890 47                  <1> 	inc di
+   263                              <1> 	
+   264                              <1> 	; put envelope number in bx
+   265 00006891 B700                <1> 	mov bh, 0
+   266 00006893 3E8A1D              <1> 	mov byte bl, [ds:di]
+   267                              <1> 
+   268                              <1> 	; make bx the pointer for this envelope in the envelope pointer table
+   269 00006896 268B16[8004]        <1> 	mov dx, [es:music_data]
+   270                              <1> 	
+   271 0000689B D1E3                <1> 	shl bx, 1
+   272 0000689D 83C304              <1> 	add bx, 4
+   273 000068A0 01D3                <1> 	add bx, dx
+   274                              <1> 	
+   275                              <1> 	; put pointer to envelope data in bx
+   276 000068A2 3E8B1F              <1> 	mov bx, [ds:bx]
+   277 000068A5 01D3                <1> 	add bx, dx
+   278                              <1> 	
+   279                              <1> 	; put envelope length in cx
+   280 000068A7 3E8B0F              <1> 	mov cx, [ds:bx]
+   281                              <1> 	
+   282                              <1> 	; store pointer to start of envelope data in ram (music_env_x_ptr)
+   283 000068AA 26891C              <1> 	mov [es:si + music_env.start], bx
+   284                              <1> 	
+   285                              <1> 	; move pointer to end of envelope data so it doesn't play
+   286 000068AD 01CB                <1> 	add bx, cx
+   287                              <1> 	
+   288                              <1> 	; store current pointer to envelope data in ram (music_env_x_ptr)
+   289 000068AF 26895C02            <1> 	mov [es:si + music_env.ptr], bx
+   290                              <1> 	
+   291                              <1> 	; store pointer to end of envelope data in ram (music_env_x_end)
+   292 000068B3 26895C04            <1> 	mov [es:si + music_env.end], bx
+   293                              <1> 	
+   294 000068B7 47                  <1> 	inc di
+   295                              <1> 	
+   296 000068B8 E906FF              <1> 	jmp music_update_loop
+   297                              <1> 
+   298                              <1> music_event_noise:
+   299                              <1> 	
+   300                              <1> 	; keep the instruction around
+   301 000068BB 88C3                <1> 	mov bl, al
+   302                              <1> 	
+   303                              <1> 	; put the tap position in al
+   304 000068BD 47                  <1> 	inc di	
+   305 000068BE 3E8A05              <1> 	mov byte al, [ds:di]
+   306                              <1> 	
+   307                              <1> 	; set the tap position and enable noise	
+   308 000068C1 0C18                <1> 	or al, NOISE_ENABLE | NOISE_RESET
+   309 000068C3 E68E                <1> 	out IO_AUDIO_NOISE_CTRL, al
+   310                              <1> 	
+   311                              <1> 	; move the on/off bit to the correct position
+   312 000068C5 80E301              <1> 	and bl, 0x1
+   313 000068C8 D0CB                <1> 	ror bl, 1
+   314                              <1> 	
+   315 000068CA B700                <1> 	mov bh, 0
+   316 000068CC 26891E[8804]        <1> 	mov [es:music_noise], bx
+   317                              <1> 	
+   318                              <1> 	; get the current audio control status
+   319                              <1> 	; update it with the noise on/off bit
+   320 000068D1 E490                <1> 	in al, IO_AUDIO_CTRL
+   321 000068D3 247F                <1> 	and al, 0b01111111
+   322 000068D5 08D8                <1> 	or al, bl
+   323                              <1> 	
+   324                              <1> 	; write the status
+   325 000068D7 E690                <1> 	out IO_AUDIO_CTRL, al
+   326                              <1> 	
+   327 000068D9 47                  <1> 	inc di
+   328                              <1> 	
+   329 000068DA E9E4FE              <1> 	jmp music_update_loop
+   330                              <1> 
+   331                              <1> music_event_default:
+   332 000068DD 47                  <1> 	inc di
+   333 000068DE EB00                <1> 	jmp music_update_done
+   334                              <1> 
+   335                              <1> music_update_done:
+   336                              <1> 
+   337 000068E0 26FF06[8A04]        <1> 	inc word [es:music_tic]
+   338 000068E5 26893E[8204]        <1> 	mov [es:music_ptr], di
+   339                              <1> 
+   340                              <1> 	; update envelopes
+   341 000068EA BA8800              <1> 	mov dx, IO_AUDIO1_VOL
+   342 000068ED BE[9004]            <1> 	mov si, music_vols
+   343                              <1> 	
+   344 000068F0 B90400              <1> 	mov cx, 4
+   345 000068F3 BF[9404]            <1> 	mov di, music_envelopes
+   346                              <1> 	
+   347                              <1> music_update_envelopes:
+   348                              <1> 
+   349                              <1> 	; envelope ptr
+   350 000068F6 268B5D02            <1> 	mov bx, [es:di + music_env.ptr]
+   351                              <1> 	; envelope end
+   352 000068FA 268B4504            <1> 	mov ax, [es:di + music_env.end]
+   353                              <1> 	
+   354                              <1> 	; check if we've reached the end of the envelope
+   355 000068FE 39D8                <1> 	cmp ax, bx
+   356 00006900 742D                <1> 	jz music_update_envelopes_next
+   357                              <1> 
+   358                              <1> 	; envelope still active so update the track volume
+   359                              <1> 	; get envelope volume in ah
+   360 00006902 3E8A27              <1> 	mov byte ah, [ds:bx]
+   361                              <1> 	
+   362                              <1> 	; move the pointer along and update it in ram, free up bx
+   363 00006905 43                  <1> 	inc bx
+   364 00006906 26895D02            <1> 	mov [es:di + music_env.ptr], bx
+   365                              <1> 	
+   366                              <1> 	; get current track volume in al
+   367 0000690A 268A04              <1> 	mov byte al, [es:si]
+   368                              <1> 	
+   369                              <1> 	; left channel
+   370                              <1> 	; scale envelope level by channel volume using lookup table
+   371 0000690D BB[006A]            <1> 	mov bx, music_envelope_lookup
+   372 00006910 88C3                <1> 	mov bl, al
+   373 00006912 80E30F              <1> 	and bl, 0xf
+   374 00006915 C0E304              <1> 	shl bl, 4
+   375 00006918 08E3                <1> 	or bl, ah
+   376                              <1> 	
+   377                              <1> 	; store scaled value in ch temporarily
+   378 0000691A 3E8A2F              <1> 	mov ch, [ds:bx]
+   379                              <1> 	
+   380                              <1> 	; right value
+   381 0000691D 88C3                <1> 	mov bl, al
+   382 0000691F 80E3F0              <1> 	and bl, 0xf0
+   383 00006922 08E3                <1> 	or bl, ah
+   384 00006924 3E8A07              <1> 	mov byte al, [ds:bx]
+   385 00006927 C0E004              <1> 	shl al, 4
+   386                              <1> 	
+   387                              <1> 	; combine the values
+   388 0000692A 08E8                <1> 	or al, ch
+   389                              <1> 	
+   390                              <1> 	; update levels
+   391 0000692C EE                  <1> 	out dx, al
+   392                              <1> 	
+   393                              <1> 	; clear ch
+   394 0000692D B500                <1> 	mov ch, 0
+   395                              <1> 	
+   396                              <1> music_update_envelopes_next:
+   397                              <1> 
+   398 0000692F 42                  <1> 	inc dx
+   399 00006930 46                  <1> 	inc si
+   400 00006931 83C708              <1> 	add di, music_env_size
+   401 00006934 E0C0                <1> 	loopnz music_update_envelopes
+   402                              <1> 
+   403 00006936 C3                  <1> 	ret
+   404                              <1> 
+   405                              <1> debug_waveforms:
+   406                              <1> 
+   407                              <1> 	; debug audio waveform
+   408 00006937 BE[4004]            <1> 	mov si, pcm_waveform_1
+   409 0000693A BF0030              <1> 	mov di, MAP_BG
+   410 0000693D B91000              <1> 	mov cx, 16
+   411                              <1> debug_waveform_1:
+   412 00006940 268A04              <1> 	mov al, [es:si]
+   413 00006943 88C3                <1> 	mov bl, al
+   414 00006945 80E30F              <1> 	and bl, 0xf
+   415 00006948 80C340              <1> 	add bl, 64
+   416 0000694B 26881D              <1> 	mov [es:di], bl
+   417 0000694E 83C702              <1> 	add di, 2
+   418                              <1> 	
+   419 00006951 88C3                <1> 	mov bl, al
+   420 00006953 C0EB04              <1> 	shr bl, 4
+   421 00006956 80C340              <1> 	add bl, 64
+   422 00006959 26881D              <1> 	mov [es:di], bl
+   423 0000695C 83C702              <1> 	add di, 2
+   424                              <1> 	
+   425 0000695F 46                  <1> 	inc si
+   426                              <1> 	
+   427 00006960 E0DE                <1> 	loopnz debug_waveform_1
+   428                              <1> 	
+   429 00006962 C3                  <1> 	ret
+   430                              <1> 	
+   431 00006963 90                  <1> 	align 2
+   432                              <1> 	music_event_jump_table:
+   433 00006964 [D467]              <1> 	dw music_event_wait
+   434 00006966 [F267]              <1> 	dw music_event_note_on
+   435 00006968 [2668]              <1> 	dw music_event_note_off
+   436 0000696A [3668]              <1> 	dw music_event_restart
+   437 0000696C [4568]              <1> 	dw music_event_volume
+   438 0000696E [5A68]              <1> 	dw music_event_instrument
+   439 00006970 [8168]              <1> 	dw music_event_envelope
+   440 00006972 [BB68]              <1> 	dw music_event_noise
+   441 00006974 [DD68]              <1> 	dw music_event_default
+   442 00006976 [DD68]              <1> 	dw music_event_default
+   443 00006978 [DD68]              <1> 	dw music_event_default
+   444 0000697A [DD68]              <1> 	dw music_event_default
+   445 0000697C [DD68]              <1> 	dw music_event_default
+   446 0000697E [DD68]              <1> 	dw music_event_default
+   447 00006980 [DD68]              <1> 	dw music_event_default
+   448 00006982 [DD68]              <1> 	dw music_event_default
+   449                              <1> 	
+   450 00006984 90<rep 7Ch>         <1> 	align 256
+   451                              <1> 	music_envelope_lookup:
+   452                              <1> 	%assign j 0
+   453                              <1> 	%rep 16
+   454                              <1> 		%assign i 0
+   455                              <1> 		%rep 16
+   456                              <1> 			db (((i * j) / 15) & 0xf)
+   457                              <1> 			%assign i i+1
+   458                              <1> 		%endrep
+   459                              <1> 		%assign j j+1
+   460                              <1> 	%endrep
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A00 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A01 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A02 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A03 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A04 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A05 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A06 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A07 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A08 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A09 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0A 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0B 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0C 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0D 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0E 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A0F 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A10 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A11 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A12 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A13 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A14 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A15 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A16 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A17 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A18 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A19 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1A 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1B 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1C 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1D 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1E 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A1F 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A20 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A21 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A22 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A23 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A24 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A25 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A26 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A27 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A28 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A29 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2A 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2B 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2C 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2D 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2E 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A2F 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A30 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A31 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A32 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A33 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A34 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A35 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A36 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A37 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A38 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A39 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3A 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3B 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3C 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3D 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3E 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A3F 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A40 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A41 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A42 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A43 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A44 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A45 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A46 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A47 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A48 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A49 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4A 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4B 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4C 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4D 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4E 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A4F 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A50 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A51 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A52 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A53 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A54 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A55 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A56 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A57 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A58 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A59 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5A 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5B 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5C 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5D 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5E 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A5F 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A60 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A61 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A62 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A63 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A64 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A65 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A66 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A67 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A68 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A69 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6A 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6B 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6C 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6D 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6E 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A6F 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A70 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A71 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A72 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A73 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A74 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A75 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A76 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A77 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A78 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A79 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7A 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7B 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7C 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7D 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7E 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A7F 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A80 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A81 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A82 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A83 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A84 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A85 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A86 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A87 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A88 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A89 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8A 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8B 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8C 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8D 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8E 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A8F 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006A90 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A91 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A92 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A93 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A94 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A95 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A96 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A97 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A98 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A99 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9A 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9B 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9C 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9D 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9E 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006A9F 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AA0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA1 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA2 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA3 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA4 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA5 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA6 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA7 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA8 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AA9 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAA 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAB 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAC 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAD 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAE 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AAF 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AB0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB1 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB2 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB3 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB4 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB5 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB6 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB7 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB8 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AB9 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABA 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABB 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABC 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABD 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABE 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ABF 0B                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AC0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC1 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC2 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC3 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC4 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC5 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC6 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC7 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC8 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AC9 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACA 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACB 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACC 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACD 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACE 0B                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ACF 0C                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AD0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD1 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD2 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD3 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD4 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD5 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD6 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD7 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD8 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AD9 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADA 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADB 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADC 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADD 0B                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADE 0C                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006ADF 0D                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AE0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE1 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE2 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE3 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE4 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE5 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE6 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE7 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE8 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AE9 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AEA 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AEB 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AEC 0B                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AED 0C                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AEE 0D                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AEF 0E                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   454                              <2>  %assign i 0
+   455                              <2>  %rep 16
+   456                              <2>  db (((i * j) / 15) & 0xf)
+   457                              <2>  %assign i i+1
+   458                              <2>  %endrep
+   456 00006AF0 00                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF1 01                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF2 02                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF3 03                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF4 04                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF5 05                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF6 06                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF7 07                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF8 08                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AF9 09                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFA 0A                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFB 0B                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFC 0C                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFD 0D                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFE 0E                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   456 00006AFF 0F                  <3>  db (((i * j) / 15) & 0xf)
+   457                              <3>  %assign i i+1
+   459                              <2>  %assign j j+1
+   461                              <1> 	
+  1469                                  	
+  1470                                  	ROM_HEADER initialize, 0xf000, RH_WS_COLOR, RH_ROM_4MBITS, RH_NO_SRAM, RH_HORIZONTAL
+    82 00006B00 FF<rep 94F0h>       <1>  times ((64*1024)-16)-$+%1 db 0xFF
+    83                              <1> 
+    84 0000FFF0 EA                  <1>  db 0xEA
+    85 0000FFF1 [0000]              <1>  dw %1
+    86 0000FFF3 00F0                <1>  dw %2
+    87 0000FFF5 00                  <1>  db 0x00
+    88                              <1> 
+    89 0000FFF6 42                  <1>  db 0x42
+    90 0000FFF7 01                  <1>  db %3
+    91 0000FFF8 01                  <1>  db 0x01
+    92 0000FFF9 00                  <1>  db 0x00
+    93 0000FFFA 02                  <1>  db %4
+    94 0000FFFB 00                  <1>  db %5
+    95 0000FFFC 04                  <1>  db %6
+    96 0000FFFD 00                  <1>  db 0x00
+    97 0000FFFE 0000                <1>  dw 0x0000

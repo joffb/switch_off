@@ -1,0 +1,37 @@
+
+@v1 { 15 14 13 12 11 10 9 8 7 6 4 2 0 0 }
+@v2 { 15 12 9 6 3 0 0 }
+
+; saw
+; @1 { 0 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15 }
+; square
+@2 { 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+; tri
+; @3 { 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
+
+T140
+
+A o5 @2 v15 l16 e d c < b > dr gr > c4 r4
+B o4 @2 @v1 v10 l4 b b >c r
+C o3 @2 @v1 v10 l4 g g g r
+D o3 @2 @v1 N0 v15 l4 c d e N1,0 @v2 o4 c16r16c16c16
+
+A r1r1
+B r1r1
+C l16 crrcrrcr e4 g4 crrcrrcr e4 < g4 >
+D v10 o2c o4c o2c o4c o2c o4c o2c o4c
+
+A r1r1
+B r1r1
+C l16 frrfrrfr a4 >c4 < frrfrrfr a4 c4 
+D o2c o4c o2c o4c o2c o4c o2c o4c
+
+A r1r1
+B r1r1
+C l16 crrcrrcr e4 g4 crrcrrcr e4 < g4 >
+D v10 o2c o4c o2c o4c o2c o4c o2c o4c
+
+A r1 l4 o4 v4 a v6 >c v8 d v10 f
+B r1 l4 o3 v4 f v6 a v8 b > v10 d
+C errgrrbr <a>rrcrrer d4 f4 g4 b4 
+D o2c o4c o2c o4c o2c o4c o2c o4c

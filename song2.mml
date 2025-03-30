@@ -1,0 +1,28 @@
+
+!k o2
+!s o4
+!h o6
+
+@v1 { 15 14 13 12 11 10 9 8 7 6 4 2 0 0 }
+@v2 { 15 12 9 6 3 0 0 }
+
+; saw
+ @1 { 0 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15 }
+; square
+@2 { 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+; tri
+; @3 { 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 }
+
+T112
+
+A o5 @2 v15 @v1 l8 ffrf ggrg eere l16 fe dc < ba gb >
+B o4 @2 v10 @v1 l8 aara bbrb ggrg r4 r4
+C o2 @1 v10 @v1 l8 cr>cr< dr>dr< cr>cr< de fg
+D N1,1 v12 @v2 l16 !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc 
+
+A o5 @2 v15 @v1 l8 ffa16g16f ggb16a16g ee < l16 cd ef  ga a+b > cd d+e
+B o4 @2 v10 @v1 l8 aara bbrb ggrg r4 r4
+C o2 @1 v10 @v1 l8 cr>cr< dr>dr< cr>cr< de fg
+D N1 v12 @v2 l16 !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc !kc8!hcc !sc8!hcc 
+
+
